@@ -1,6 +1,6 @@
 {
-  "name": "Fit-Tracker",
-  "short_name": "Fit-Tracker",
+  "name": "Spotter",
+  "short_name": "Spotter",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

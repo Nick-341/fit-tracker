@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Fit-Tracker</title>
+<title>Spotter</title>
 <meta name="theme-color" content="#F2F3F0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Fit-Tracker">
+<meta name="apple-mobile-web-app-title" content="Spotter">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -204,6 +204,32 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .badge.off .bn{color:var(--muted)}
 .badge .bn{font-weight:800;font-size:13px;line-height:1.2}
 .badge .bp{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Editor & Bibliothek */
+.chiprow{display:flex;gap:6px;overflow-x:auto;margin:10px -16px 12px;padding:0 16px;scrollbar-width:none}
+.chiprow::-webkit-scrollbar{display:none}
+.chiprow button{flex:none;border:0;background:var(--surface);color:var(--ink);font-weight:700;font-size:14px;border-radius:999px;min-height:38px;padding:0 14px}
+.chiprow button.on{background:var(--ink);color:var(--bg)}
+.plus{flex:none;width:38px;height:38px;border-radius:19px;border:2px solid var(--line);background:none;color:var(--ink);font-size:20px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.okdot{flex:none;width:30px;height:30px;border-radius:15px;background:var(--accent);color:var(--on-accent);font-weight:900;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.okdot.guess{background:var(--soft);color:var(--muted)}
+.selpanel{position:sticky;bottom:0;margin:12px -4px 0;background:var(--surface);border-radius:22px;padding:16px;box-shadow:0 -10px 30px rgba(0,0,0,.25)}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.presets button{border:0;background:var(--bg);color:var(--ink);border-radius:14px;min-height:52px;font-weight:900;font-stretch:90%;font-size:18px}
+.presets button:active{background:var(--accent);color:var(--on-accent)}
+.ord{display:flex;flex-direction:column;gap:2px}
+.ord button{border:0;background:none;color:var(--muted);font-size:11px;line-height:1;width:28px;height:20px;border-radius:6px}
+.ord button:disabled{opacity:.25}
+.exgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.exgrid .lbl{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.stepper{display:flex;align-items:center;background:var(--bg);border-radius:12px;min-height:46px}
+.stepper button{border:0;background:none;color:var(--ink);width:46px;height:46px;font-size:22px;font-weight:700;border-radius:12px}
+.stepper button.plus{color:var(--mine);border:0;width:46px;height:46px}
+.stepper b{flex:1;text-align:center;font-weight:900;font-stretch:90%;font-size:22px}
+.reps{display:flex;align-items:center;gap:6px}
+.reps input{text-align:center;background:var(--bg);border:0;font-weight:900;font-size:20px;padding:8px 4px}
+.reps span{color:var(--muted);font-weight:700;font-size:14px}
+.dashed{width:100%;border:2px dashed var(--line);background:none;color:var(--ink);font-weight:800;border-radius:20px;min-height:54px;margin-top:2px}
 
 /* Login */
 .auth{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 48px) 20px 40px}
@@ -841,6 +867,7 @@ async function rTraining(){
   const uid = viewId(), mine = own();
   const [routines, wos] = await Promise.all([ q('routine', uid), q('workout', uid, addDays(S.day, -42), S.day) ]);
   S.rt = {}; routines.forEach(r => S.rt[r.id] = r);
+  if (mine){ const seen = new Set(); S.exNames = []; [...routines.flatMap(r => r.data.exercises.map(e => e.name)), ...wos.slice().reverse().flatMap(w => w.data.exercises.map(e => e.name))].forEach(n => { const k = n.toLowerCase(); if (!seen.has(k)){ seen.add(k); S.exNames.push(n); } }); }
   let h = '';
   if (mine){
     h += `<div class="sec-h"><h2>Trainingstage</h2><button class="btn sm" onclick="openRoutine()">Neuer Trainingstag</button></div>`;
@@ -860,22 +887,132 @@ async function rTraining(){
     : '<div class="note">In diesem Zeitraum ist kein Training eingetragen.</div>';
   return h + '</div>';
 }
+/* ---------- Übungsbibliothek ---------- */
+const EX_LIB = {
+  'Brust': [['Bankdrücken','Langhantel'],['Schrägbankdrücken','Kurzhantel'],['Kurzhantel-Bankdrücken','Kurzhantel'],['Brustpresse','Maschine'],['Dips','Körpergewicht'],['Butterfly','Maschine'],['Cable Crossover','Kabelzug'],['Liegestütze','Körpergewicht']],
+  'Rücken': [['Klimmzüge','Körpergewicht'],['Latzug','Kabelzug'],['Rudern am Kabel','Kabelzug'],['Langhantelrudern','Langhantel'],['Kurzhantelrudern einarmig','Kurzhantel'],['T-Bar-Rudern','Langhantel'],['Kreuzheben','Langhantel'],['Face Pulls','Kabelzug'],['Hyperextensions','Rückenstrecker']],
+  'Beine': [['Kniebeuge','Langhantel'],['Frontkniebeuge','Langhantel'],['Beinpresse','Maschine'],['Rumänisches Kreuzheben','Langhantel'],['Ausfallschritte','Kurzhantel'],['Bulgarian Split Squat','Kurzhantel'],['Beinstrecker','Maschine'],['Beinbeuger','Maschine'],['Hip Thrust','Langhantel'],['Wadenheben','Maschine'],['Adduktoren','Maschine'],['Abduktoren','Maschine']],
+  'Schultern': [['Schulterdrücken','Langhantel'],['Kurzhantel-Schulterdrücken','Kurzhantel'],['Seitheben','Kurzhantel'],['Seitheben am Kabel','Kabelzug'],['Reverse Butterfly','Maschine'],['Frontheben','Kurzhantel'],['Arnold Press','Kurzhantel']],
+  'Arme': [['Langhantel-Curls','Langhantel'],['Kurzhantel-Curls','Kurzhantel'],['Hammer Curls','Kurzhantel'],['Scott Curls','Maschine'],['Trizepsdrücken am Kabel','Kabelzug'],['French Press','SZ-Stange'],['Overhead Trizeps-Extension','Kabelzug'],['Enges Bankdrücken','Langhantel']],
+  'Core': [['Plank','Körpergewicht'],['Kabel-Crunches','Kabelzug'],['Hanging Leg Raises','Körpergewicht'],['Ab Wheel','Rad'],['Russian Twists','Körpergewicht'],['Pallof Press','Kabelzug']]
+};
+const PRESETS = [[3,8,8],[3,10,10],[3,12,12],[4,6,8],[3,8,12],[5,5,5]];
+const scheme = (s, f, t) => `${s} × ${f === t ? f : f + '–' + t}`;
+function splitReps(r){ const [f, t] = String(r || '10').split(/[-–]/).map(x => parseInt(x)); return { from: f || 10, to: t || f || 10 }; }
+function knownScheme(name){
+  const k = name.toLowerCase();
+  for (const r of Object.values(S.rt || {})) for (const e of r.data.exercises) if (e.name.toLowerCase() === k){ const x = splitReps(e.reps); return scheme(e.sets, x.from, x.to); }
+  return '';
+}
+let L = null;
+function openExLib(opts){ L = { group: (S.exNames || []).length ? 'Zuletzt' : 'Alle', q: '', sel: null, ...opts }; drawExLib(); }
+function libItems(){
+  const own = (S.exNames || []).map(n => [n, 'Zuletzt verwendet']);
+  let items = L.group === 'Zuletzt' ? own : L.group === 'Alle' ? Object.values(EX_LIB).flat() : (EX_LIB[L.group] || []);
+  const q = L.q.trim().toLowerCase();
+  if (q){
+    const all = [...own, ...Object.values(EX_LIB).flat()], seen = new Set();
+    items = all.filter(([n]) => { const k = n.toLowerCase(); if (seen.has(k) || !k.includes(q)) return false; seen.add(k); return true; });
+  }
+  return items;
+}
+function drawExLib(){
+  const groups = [...((S.exNames || []).length ? ['Zuletzt'] : []), 'Alle', ...Object.keys(EX_LIB)];
+  openSheet(`<div class="sh-head"><h3>Übung hinzufügen</h3><button class="btn sm ghost" onclick="L.back()">Fertig</button></div>
+    <input id="exq" type="search" placeholder="Übung suchen oder neu anlegen" value="${esc(L.q)}" oninput="L.q=this.value;drawLibList()" aria-label="Übung suchen">
+    <div class="chiprow">${groups.map(g => `<button class="${L.group === g && !L.q ? 'on' : ''}" onclick="L.group='${g}';L.q='';drawExLib()">${g}</button>`).join('')}</div>
+    <div id="liblist"></div><div id="libsel"></div>`);
+  drawLibList();
+}
+function drawLibList(){
+  const items = libItems(), have = new Set(L.have());
+  const q = L.q.trim();
+  let h = '<div class="list">' + items.map(([n, sub]) => {
+    const on = have.has(n.toLowerCase());
+    return `<div class="row"><div class="grow"><div class="t">${esc(n)}</div><div class="s">${esc(sub)}</div></div>${on
+      ? `<span class="okdot" aria-label="Bereits hinzugefügt">✓</span>`
+      : `<button class="plus" aria-label="${esc(n)} hinzufügen" onclick="libSelect(this.dataset.n)" data-n="${esc(n)}">+</button>`}</div>`;
+  }).join('');
+  if (q && !items.some(([n]) => n.toLowerCase() === q.toLowerCase()))
+    h += `<div class="row tap" onclick="libSelect(this.dataset.n)" data-n="${esc(q)}"><div class="grow"><div class="t">„${esc(q)}“ als neue Übung</div><div class="s">Eigene Übung anlegen</div></div><span class="plus" aria-hidden="true">+</span></div>`;
+  if (!items.length && !q) h += '<div class="row muted">Keine Übungen in dieser Gruppe.</div>';
+  $('#liblist').innerHTML = h + '</div>';
+}
+function libSelect(name){
+  L.sel = name;
+  const last = knownScheme(name);
+  $('#libsel').innerHTML = `<div class="selpanel"><div class="sec-h" style="margin-bottom:4px"><h3>${esc(name)}</h3>${last ? `<span class="small muted" style="font-weight:600">Zuletzt: ${last}</span>` : ''}</div>
+    <div class="small muted" style="font-weight:700;margin-bottom:6px">Vorgabe antippen</div>
+    <div class="presets">${PRESETS.map(([s, f, t], i) => `<button onclick="libAdd(${i})">${scheme(s, f, t)}</button>`).join('')}</div>
+    <div class="btns" style="margin-top:10px"><button class="btn line" style="flex:1" onclick="L.sel=null;$('#libsel').innerHTML=''">Abbrechen</button><button class="btn ghost" style="flex:1" onclick="libAdd(-1)">Eigene Werte</button></div></div>`;
+  $('#libsel').scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+function libAdd(i){
+  const [s, f, t] = i >= 0 ? PRESETS[i] : [3, 10, 10];
+  L.onAdd({ name: L.sel, sets: s, from: f, to: t });
+  toast(L.sel + ' hinzugefügt');
+  if (i < 0) return L.back();
+  L.sel = null; $('#libsel').innerHTML = ''; drawLibList();
+}
+
 /* ---------- Trainingstag-Editor ---------- */
 let RO = null;
 function openRoutine(id){
   const r = id ? S.rt[id] : null;
-  RO = { id };
-  const text = r ? r.data.exercises.map(e => `${e.name}; ${e.sets}; ${e.reps}`).join('\n') : '';
-  openSheet(`<div class="sh-head"><h3>${id ? 'Trainingstag bearbeiten' : 'Neuer Trainingstag'}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-    <label class="f"><span>Name</span><input id="ron" value="${esc(r?.data.name || '')}" placeholder="z. B. Oberkörper A"></label>
-    <label class="f"><span>Übungen, eine pro Zeile: Name; Sätze; Wiederholungen</span><textarea id="rox" placeholder="Bankdrücken; 4; 6-8&#10;Rudern Kabel; 3; 10-12&#10;Schulterdrücken; 3; 8-10">${esc(text)}</textarea></label>
-    <div class="btns"><button class="btn" style="flex:1" onclick="saveRoutine()">Speichern</button>${id ? `<button class="btn danger" onclick="deleteRoutine()">Löschen</button>` : ''}</div>`);
+  RO = { id, name: r?.data.name || '', exercises: r ? r.data.exercises.map(e => ({ name: e.name, sets: e.sets, ...splitReps(e.reps) })) : [] };
+  drawRoutine();
+}
+function drawRoutine(){
+  openSheet(`<div class="sh-head"><h3>${RO.id ? 'Trainingstag bearbeiten' : 'Neuer Trainingstag'}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <label class="f"><span>Name</span><input value="${esc(RO.name)}" oninput="RO.name=this.value" placeholder="z. B. Oberkörper A"></label>
+    ${RO.exercises.map((e, i) => `<div class="ex">
+      <div class="ex-h">
+        <div class="ord"><button aria-label="Nach oben" ${i ? '' : 'disabled'} onclick="moveEx(${i},-1)">▲</button><button aria-label="Nach unten" ${i < RO.exercises.length - 1 ? '' : 'disabled'} onclick="moveEx(${i},1)">▼</button></div>
+        <input value="${esc(e.name)}" aria-label="Name der Übung" oninput="RO.exercises[${i}].name=this.value">
+        <button class="iconbtn" aria-label="Übung entfernen" onclick="RO.exercises.splice(${i},1);drawRoutine()">×</button></div>
+      <div class="exgrid">
+        <div><div class="lbl">Sätze</div><div class="stepper"><button aria-label="Weniger Sätze" onclick="stepSets(${i},-1)">−</button><b id="ss${i}">${e.sets}</b><button class="plus" aria-label="Mehr Sätze" onclick="stepSets(${i},1)">+</button></div></div>
+        <div><div class="lbl">Wiederholungen</div><div class="reps"><input inputmode="numeric" aria-label="Wiederholungen von" value="${e.from}" oninput="RO.exercises[${i}].from=parseInt(this.value)||0"><span>bis</span><input inputmode="numeric" aria-label="Wiederholungen bis" value="${e.to}" oninput="RO.exercises[${i}].to=parseInt(this.value)||0"></div></div>
+      </div></div>`).join('')}
+    <button class="dashed" onclick="openExLib({have:()=>RO.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>RO.exercises.push(x),back:drawRoutine})">+ Übung hinzufügen</button>
+    <button class="btn ghost full" style="margin-top:8px" onclick="drawTextImport()">Plan als Text einfügen</button>
+    <div class="btns"><button class="btn accent" style="flex:1" onclick="saveRoutine()">Trainingstag speichern</button>${RO.id ? `<button class="btn danger" onclick="deleteRoutine()">Löschen</button>` : ''}</div>`);
+}
+function stepSets(i, d){ const e = RO.exercises[i]; e.sets = Math.max(1, Math.min(10, e.sets + d)); $('#ss' + i).textContent = e.sets; }
+function moveEx(i, d){ const a = RO.exercises, j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; drawRoutine(); }
+function parseLine(l){
+  l = l.trim().replace(/^[-•*\d.)\s]+(?=\D)/, ''); if (!l) return null;
+  const clamp = n => Math.max(1, Math.min(10, n || 3));
+  if (/[;|]/.test(l)){ const p = l.split(/[;|]/).map(s => s.trim()); return { name: p[0], sets: clamp(parseInt(p[1])), ...splitReps(p[2]) }; }
+  const m = l.match(/^(.*?)[\s,:]+(\d{1,2})\s*[x×*]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?\s*(?:wdh\.?|wiederholungen|reps?)?$/i);
+  if (m && m[1].trim()) return { name: m[1].trim(), sets: clamp(+m[2]), from: +m[3], to: +(m[4] || m[3]) };
+  return { name: l, sets: 3, from: 10, to: 10, guess: true };
+}
+function drawTextImport(){
+  openSheet(`<div class="sh-head"><h3>Plan als Text einfügen</h3><button class="btn sm ghost" onclick="drawRoutine()">Zurück</button></div>
+    <label class="f"><span>Eine Übung pro Zeile, so wie du sie aufschreiben würdest</span><textarea id="tim" oninput="previewImport()" placeholder="Kniebeuge 5x5&#10;Rumänisches Kreuzheben 3x8-10&#10;Beinpresse 3 x 12"></textarea></label>
+    <div id="timp"></div>
+    <p class="small muted">Erkannt werden zum Beispiel 4x8, 4 x 8, 3x8-10 oder nur der Name. Ohne Angabe setzt die App 3 × 10.</p>
+    <div class="btns"><button class="btn accent full" onclick="applyImport()">Übernehmen</button></div>`);
+}
+function previewImport(){
+  const rows = $('#tim').value.split('\n').map(parseLine).filter(Boolean);
+  $('#timp').innerHTML = rows.length ? `<div class="small muted" style="font-weight:700;margin-bottom:6px">So wird es übernommen</div><div class="list">${rows.map(r => `<div class="row"><span class="okdot ${r.guess ? 'guess' : ''}">${r.guess ? '?' : '✓'}</span><div class="grow t">${esc(r.name)}</div><div class="k num" style="font-size:18px">${scheme(r.sets, r.from, r.to)}</div></div>`).join('')}</div>` : '';
+}
+function applyImport(){
+  const rows = $('#tim').value.split('\n').map(parseLine).filter(Boolean);
+  if (!rows.length) return toast('Bitte mindestens eine Übung eintragen');
+  rows.forEach(r => RO.exercises.push({ name: r.name, sets: r.sets, from: r.from, to: r.to }));
+  toast(rows.length + (rows.length === 1 ? ' Übung' : ' Übungen') + ' übernommen'); drawRoutine();
 }
 const saveRoutine = run(async () => {
-  const name = $('#ron').value.trim();
-  const exercises = $('#rox').value.split('\n').map(l => l.split(/[;|]/).map(s => s.trim())).filter(p => p[0])
-    .map(p => ({ name: p[0], sets: Math.max(1, Math.min(10, parseInt(p[1]) || 3)), reps: p[2] || '' }));
-  if (!name || !exercises.length) return toast('Name und mindestens eine Übung sind nötig');
+  const name = RO.name.trim();
+  const exercises = RO.exercises.filter(e => e.name.trim()).map(e => {
+    let f = e.from || 10, t = e.to || f; if (t < f) [f, t] = [t, f];
+    return { name: e.name.trim(), sets: e.sets, reps: f === t ? String(f) : `${f}-${t}` };
+  });
+  if (!name) return toast('Gib dem Trainingstag einen Namen');
+  if (!exercises.length) return toast('Füge mindestens eine Übung hinzu');
   if (RO.id) await upd(RO.id, { name, exercises }); else await add('routine', null, { name, exercises });
   closeSheet(); toast('Trainingstag gespeichert'); render();
 });
@@ -916,7 +1053,7 @@ function drawWorkout(){
         <button class="btn sm ghost" style="padding:4px" aria-label="Wie letztes Mal" ${ls ? '' : 'disabled'} onclick="copyLast(${i},${j})">=</button>
         <button class="iconbtn" aria-label="Satz entfernen" onclick="W.exercises[${i}].sets.splice(${j},1);drawWorkout()">×</button></div>`; }).join('')}
       <button class="btn sm ghost" onclick="addSet(${i})">+ Satz</button></div>`).join('')}
-    <div class="btns" style="margin-top:0"><button class="btn sm line" onclick="W.exercises.push({name:'',sets:[{kg:'',reps:''}]});drawWorkout()">+ Übung</button></div>
+    <div class="btns" style="margin-top:0"><button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from===x.to?String(x.from):x.from+'-'+x.to,sets:Array.from({length:x.sets},()=>({kg:'',reps:''}))}),back:drawWorkout})">+ Übung hinzufügen</button></div>
     <label class="f" style="margin-top:14px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     <div class="btns"><button class="btn accent" style="flex:1" onclick="saveWorkout()">Einheit speichern</button>${W.id ? `<button class="btn danger" onclick="deleteWorkout()">Löschen</button>` : ''}</div>`);
 }
@@ -1123,7 +1260,7 @@ const unlinkPartner = run(async () => {
 function showAuth(msg = ''){
   document.body.classList.remove('in');
   $('#view').dataset.tab = '';
-  $('#view').innerHTML = `<div class="auth"><svg width="84" height="84" viewBox="0 0 180 180" aria-hidden="true"><rect width="180" height="180" rx="40" fill="#FFB81C"/><rect x="54" y="83" width="72" height="14" rx="4" fill="#15181C"/><rect x="34" y="56" width="16" height="68" rx="6" fill="#15181C"/><rect x="52" y="66" width="10" height="48" rx="4" fill="#15181C"/><rect x="130" y="56" width="16" height="68" rx="6" fill="#15181C"/><rect x="118" y="66" width="10" height="48" rx="4" fill="#15181C"/></svg><h1>Fit-Tracker</h1><p class="muted">Ernährung, Training und Fortschritt, gemeinsam im Blick.</p>
+  $('#view').innerHTML = `<div class="auth"><svg width="84" height="84" viewBox="0 0 180 180" aria-hidden="true"><rect width="180" height="180" rx="40" fill="#15181C"/><circle cx="90" cy="90" r="40" fill="#FFB81C"/><rect x="34" y="84" width="112" height="12" rx="6" fill="#F2F3F0"/><rect x="26" y="66" width="13" height="48" rx="5" fill="#F2F3F0"/><rect x="141" y="66" width="13" height="48" rx="5" fill="#F2F3F0"/></svg><h1>Spotter</h1><p class="muted">Euer Trainingspartner für Ernährung, Training und Fortschritt.</p>
     <label class="f"><span>E-Mail</span><input id="ae" type="email" autocomplete="email"></label>
     <label class="f"><span>Passwort</span><input id="ap" type="password" autocomplete="current-password"></label>
     <label class="f" id="anf" style="display:none"><span>Dein Name</span><input id="an" autocomplete="given-name"></label>
