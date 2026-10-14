@@ -265,6 +265,16 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .draft .btn.line{background:none;border-color:var(--on-accent);color:var(--on-accent)}
 .pend{color:var(--mine);font-weight:900}
 
+.slot-r{display:flex;align-items:center;gap:10px}
+.sendbtn{border:0;background:var(--surface);color:var(--ink);font-weight:800;font-size:12px;border-radius:999px;min-height:30px;padding:0 10px}
+.sharein{background:#076A9F;color:#fff;border-radius:20px;padding:14px 16px;margin-bottom:12px}
+.sharein .btn{background:#fff;color:#15181C}
+.sharein .btn.line{background:none;border-color:#fff;color:#fff}
+.autot{display:flex;align-items:center;gap:8px;cursor:pointer}
+.autot .switch{width:44px;height:26px}
+.autot .switch::after{width:20px;height:20px}
+.autot .switch:checked::after{transform:translateX(18px)}
+
 /* Login */
 .auth{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 48px) 20px 40px}
 .auth h1{font-size:46px;margin:18px 0 6px}
@@ -641,7 +651,8 @@ async function rHeute(){
     P ? kudosFor(P.id, S.day, S.day) : [],
     P ? kudosFor(S.user.id, S.day, S.day) : []
   ]);
-  let h = heroCard(M, 'var(--accent)') + tiles(M, true);
+  const inbox = await pendingShares();
+  let h = shareCards(inbox) + heroCard(M, 'var(--accent)') + tiles(M, true);
   const myKeys = ['day:' + S.day, ...M.wos.map(w => 'wo:' + w.id)];
   const got = kIn.filter(k => myKeys.includes(k.data.key));
   if (got.length) h += `<div class="kudosin">${KUDOS_ICON}<span><b>${esc(nameOf(P))}</b> gibt dir Kudos${got.some(k => k.data.key.startsWith('wo:')) ? ' für dein Training' : ' für heute'}.</span></div>`;
@@ -817,16 +828,11 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.5.1';
 const CHANGELOG = [
-  ['Offline-Modus', 'Spotter startet auch ohne Empfang. Training, Gewicht und Essen werden zwischengespeichert und automatisch hochgeladen, sobald wieder Netz da ist.'],
-  ['Training geht nicht verloren', 'Eine laufende Einheit wird nach jeder Eingabe auf dem Handy gesichert und lässt sich unter Training fortsetzen.'],
-  ['Sammelkorb', 'Mehrere Lebensmittel nacheinander antippen oder scannen, Mengen am Ende prüfen und alles auf einmal speichern.'],
-  ['Scannen am Stück', 'Die Kamera bleibt an, jedes erkannte Produkt landet direkt im Korb.'],
-  ['Kopieren mit Ziel', 'Beim Kopieren wählst du für jede Mahlzeit, wohin sie soll, zum Beispiel vom Abendessen ins Mittagessen.'],
-  ['Einträge bearbeiten', 'Tippe auf einen Eintrag unter Essen, um die Menge zu ändern, ihn zu kopieren oder zu verschieben.'],
-  ['Datenexport', 'Unter Profil alle eigenen Daten als Datei sichern.'],
-  ['Mehr Sicherheit', 'Die externen Programmbibliotheken werden vor dem Laden auf Veränderungen geprüft.']
+  ['Mahlzeiten schicken', 'Gemeinsam gegessen? Schicke eine Mahlzeit an deinen Partner: über „An …“ neben der Mahlzeit, beim Antippen eines Eintrags oder direkt im Korb.'],
+  ['Mit einem Tipp übernehmen', 'Geschickte Mahlzeiten erscheinen unter Heute und Essen. Portion anpassen, einzelne Lebensmittel abwählen, übernehmen.'],
+  ['Pausentimer nach Bedarf', 'Der automatische Start lässt sich direkt im Training oder unter Profil abschalten. Manuell starten geht weiterhin.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
@@ -921,7 +927,7 @@ function tickRest(){
   const el = $('#restbar'); const left = Math.ceil((TM.end - Date.now()) / 1000);
   if (TM.end && left <= 0){ TM.end = 0; clearInterval(TM.iv); TM.iv = null; if (!document.hidden) beep(); if (el){ el.classList.add('done'); el.innerHTML = `<b class="num" style="font-size:24px">Weiter geht's</b><span style="flex:1"></span><button class="btn sm" onclick="this.closest('#restbar').classList.remove('done');tickRest()">OK</button>`; } return; }
   if (!el) return;
-  if (!TM.end){ el.classList.remove('done'); el.innerHTML = `<span class="small" style="font-weight:700">Pause ${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)}</span><span style="flex:1"></span><button class="btn sm ghost" onclick="startRest()">Pause starten</button>`; return; }
+  if (!TM.end){ el.classList.remove('done'); el.innerHTML = `<label class="autot"><input type="checkbox" class="switch" ${restAuto() ? 'checked' : ''} onchange="setRestAuto(this.checked)" aria-label="Pausentimer automatisch starten"><span class="small" style="font-weight:700">Auto-Timer${restAuto() ? '' : ' aus'}</span></label><span style="flex:1"></span><button class="btn sm ghost" onclick="startRest()">Pause ${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)} starten</button>`; return; }
   const pct = Math.max(0, Math.min(100, left / TM.dur * 100));
   el.classList.remove('done');
   el.innerHTML = `<b class="num" style="font-size:28px;min-width:64px">${Math.floor(left / 60)}:${z(left % 60)}</b>
@@ -968,6 +974,7 @@ function drawEntry(){
       <div class="grid2"><label class="f"><span>Tag</span><input type="date" value="${EN.day}" max="${today()}" onchange="EN.day=this.value"></label>
       <label class="f"><span>Mahlzeit</span><select onchange="EN.slot=this.value">${slotOpts(EN.slot)}</select></label></div>
       <div class="btns" style="margin-top:0"><button class="btn accent" style="flex:1" onclick="entryCopy(false)">Kopieren</button><button class="btn line" style="flex:1" onclick="entryCopy(true)">Verschieben</button></div></div>
+    ${S.partner ? `<div class="btns"><button class="btn ghost full" onclick="sendMeal([EN.l.data], EN.l.data.slot || 'snack', S.day)">An ${esc(nameOf(S.partner))} schicken</button></div>` : ''}
     <div class="btns"><button class="btn danger full" onclick="delLog('${l.id}');closeSheet()">Eintrag löschen</button></div>`);
 }
 const entryGrams = run(async () => {
@@ -1084,6 +1091,55 @@ const exportData = run(async () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 });
 
+/* ================= Mahlzeiten an den Partner schicken ================= */
+const restAuto = () => S.me?.data?.restAuto !== false;
+function autoRest(){ if (restAuto()) startRest(); }
+const setRestAuto = run(async v => { await saveProfile({ restAuto: v }); toast(v ? 'Pausentimer startet automatisch' : 'Pausentimer startet nur manuell'); tickRest(); });
+const mealShareText = items => { const t = items.reduce((a, d) => addN(a, d), ZERO); return `${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}, ${fmt(t.kcal)} kcal`; };
+const sendMeal = run(async (items, slot, day) => {
+  if (!S.partner) return toast('Kein Partner verknüpft');
+  const clean = items.map(d => { const { recipe_id, from_share, ...rest } = d; return rest; });
+  await add('mealshare', day || S.day, { to: S.partner.id, slot, items: clean });
+  toast(`An ${nameOf(S.partner)} geschickt`);
+});
+function sendSlot(slot){ const items = Object.values(S.logIdx || {}).filter(l => (l.data.slot || 'snack') === slot).map(l => l.data); if (items.length) sendMeal(items, slot, S.day); }
+async function pendingShares(){
+  if (!S.partner) return [];
+  const [shares, acks] = await Promise.all([ q('mealshare', S.partner.id, addDays(today(), -7), today()).catch(() => []), q('shareack', S.user.id, addDays(today(), -21), null).catch(() => []) ]);
+  const done = new Set(acks.map(a => a.data.ref));
+  return shares.filter(s => s.data.to === S.user.id && !done.has(s.id));
+}
+function shareCards(list){
+  return list.map(s => `<div class="sharein"><div class="grow"><div><b>${esc(nameOf(S.partner))}</b> hat dir ${slotName(s.data.slot)} geschickt</div><div class="small" style="opacity:.8">${mealShareText(s.data.items)}${s.day !== today() ? ', ' + dayLabel(s.day) : ''}</div></div>
+    <div class="btns" style="margin-top:10px"><button class="btn" style="flex:1" onclick="openShare('${s.id}')">Übernehmen</button><button class="btn line" onclick="ackShare('${s.id}','reject')">Ablehnen</button></div></div>`).join('');
+}
+let SH = null;
+const openShare = run(async id => {
+  const list = await pendingShares(); const s = list.find(x => x.id === id); if (!s) return render();
+  SH = { s, f: 1, day: s.day, slot: s.data.slot, items: s.data.items.map(d => ({ ...d, use: true })) };
+  drawShare();
+});
+const shItem = d => d.per && d.grams ? roundN(scale(d.per, d.grams * SH.f)) : roundN({ kcal: d.kcal * SH.f, p: d.p * SH.f, c: d.c * SH.f, f: d.f * SH.f });
+function drawShare(){
+  const sel = SH.items.filter(d => d.use), t = sel.reduce((a, d) => addN(a, shItem(d)), ZERO);
+  openSheet(`<div class="sh-head"><h3>${slotName(SH.slot)} von ${esc(nameOf(S.partner))}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <div class="f"><span>Deine Portion im Vergleich</span></div>
+    <div class="quick">${[0.5, 0.75, 1, 1.25, 1.5].map(f => `<button class="btn sm ${SH.f === f ? '' : 'ghost'}" onclick="SH.f=${f};drawShare()">×${String(f).replace('.', ',')}</button>`).join('')}</div>
+    <div class="list">${SH.items.map((d, i) => { const v = shItem(d);
+      return `<label class="row tap"><input type="checkbox" class="switch" ${d.use ? 'checked' : ''} onchange="SH.items[${i}].use=this.checked;drawShare()" aria-label="${esc(d.name)} übernehmen"><div class="grow"><div class="t">${esc(d.name)}</div><div class="s">${d.grams ? fmt(d.grams * SH.f) + ' g, ' : ''}P ${fmt(v.p)} / KH ${fmt(v.c)} / F ${fmt(v.f)}</div></div><div class="k">${fmt(v.kcal)}</div></label>`; }).join('')}</div>
+    <div class="grid2" style="margin-top:12px"><label class="f"><span>Tag</span><input type="date" value="${SH.day}" max="${today()}" onchange="SH.day=this.value"></label>
+    <label class="f"><span>Mahlzeit</span><select onchange="SH.slot=this.value">${slotOpts(SH.slot)}</select></label></div>
+    <div class="card"><b class="num" style="font-size:30px">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div></div>
+    <div class="btns"><button class="btn accent full" ${sel.length ? '' : 'disabled'} onclick="acceptShare()">In mein Tagebuch übernehmen</button></div>`);
+}
+const acceptShare = run(async () => {
+  const sel = SH.items.filter(d => d.use);
+  await addMany('log', sel.map(d => { const { use, ...rest } = d; return { day: SH.day, data: { ...rest, slot: SH.slot, from_share: SH.s.id, ...(d.grams && d.per ? { grams: r0(d.grams * SH.f) } : { factor: r1((rest.factor || 1) * SH.f) }), ...shItem(d) } }; }));
+  await add('shareack', today(), { ref: SH.s.id, action: 'accept' });
+  closeSheet(); toast(sel.length === 1 ? 'Übernommen' : sel.length + ' Einträge übernommen'); render();
+});
+const ackShare = run(async (id, action) => { if (action === 'reject' && !confirm('Mahlzeit ablehnen?')) return; await add('shareack', today(), { ref: id, action }); render(); });
+
 /* ================= Essen ================= */
 async function rEssen(){
   const uid = viewId(), mine = own(), p = mine ? S.me : S.partner;
@@ -1092,13 +1148,14 @@ async function rEssen(){
   await loadRecipes();
   S.logIdx = Object.fromEntries(logs.map(l => [l.id, l]));
   const tot = sum(logs), tgt = targetFor(p, S.day, wos.length > 0);
-  let h = `<div class="card"><div class="big" style="font-size:40px">${fmt(tot.kcal)}<small>${tgt ? `von ${fmt(tgt.kcal)} kcal` : 'kcal'}</small></div>
+  const inbox = mine ? await pendingShares() : [];
+  let h = shareCards(inbox) + `<div class="card"><div class="big" style="font-size:40px">${fmt(tot.kcal)}<small>${tgt ? `von ${fmt(tgt.kcal)} kcal` : 'kcal'}</small></div>
     <div class="small muted">Protein ${fmt(tot.p)}${tgt ? '/' + tgt.p : ''} g, Kohlenhydrate ${fmt(tot.c)}${tgt ? '/' + tgt.c : ''} g, Fett ${fmt(tot.f)}${tgt ? '/' + tgt.f : ''} g</div>${mine ? `<div class="btns" style="margin-top:12px"><button class="btn sm ghost" onclick="openCopy()">Essen von anderem Tag kopieren</button></div>` : ''}</div>`;
   h += '<div class="sec"><div class="list">';
   for (const [k, label] of SLOTS){
     const items = logs.filter(l => (l.data.slot || 'snack') === k);
     const st = sum(items);
-    h += `<div class="slot-h"><span>${label}</span><span>${fmt(st.kcal)} kcal</span></div>`;
+    h += `<div class="slot-h"><span>${label}</span><span class="slot-r">${mine && S.partner && items.length ? `<button class="sendbtn" onclick="sendSlot('${k}')">An ${esc(nameOf(S.partner).split(' ')[0])}</button>` : ''}${fmt(st.kcal)} kcal</span></div>`;
     h += items.map(l => `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openEntry('${l.id}')"` : ''}><div class="grow"><div class="t">${esc(l.data.name)}${l.pending ? ' <span class="pend" title="Wartet auf Upload">⇡</span>' : ''}</div><div class="s">${l.data.grams ? fmt(l.data.grams) + ' g, ' : ''}${l.data.factor && l.data.factor !== 1 ? '×' + String(l.data.factor).replace('.', ',') + ', ' : ''}P ${fmt(l.data.p)} / KH ${fmt(l.data.c)} / F ${fmt(l.data.f)}</div></div><div class="k">${fmt(l.data.kcal)}</div>${mine ? `<button class="iconbtn" aria-label="Eintrag löschen" onclick="event.stopPropagation();delLog('${l.id}')">×</button>` : ''}</div>`).join('');
     if (mine) h += `<div class="row"><button class="btn sm ghost" onclick="openPicker({mode:'log',slot:'${k}',title:'${label}'})">+ Hinzufügen</button></div>`;
     else if (!items.length) h += `<div class="row s muted">Nichts eingetragen</div>`;
@@ -1192,6 +1249,7 @@ function drawBasket(){
       <input class="gin" inputmode="decimal" value="${b.grams}" aria-label="Menge in Gramm" oninput="P.basket[${i}].grams=num(this.value);$('#bk${i}').textContent=fmt(scale(P.basket[${i}].per,P.basket[${i}].grams).kcal)+' kcal';basketSum()"><span class="small muted">g</span>
       <button class="iconbtn" aria-label="Entfernen" onclick="P.basket.splice(${i},1);P.basket.length?drawBasket():drawPicker()">×</button></div>`).join('')}</div>
     <div class="card" style="margin-top:12px" id="bsum"></div>
+    ${P.mode === 'log' && S.partner ? `<label class="check" style="margin-top:12px"><input type="checkbox" ${P.sendTo ? 'checked' : ''} onchange="P.sendTo=this.checked"> Auch an ${esc(nameOf(S.partner))} schicken</label>` : ''}
     <div class="btns"><button class="btn accent full" onclick="saveBasket()">${P.mode === 'log' ? 'Alle speichern' : 'Als Zutaten übernehmen'}</button></div>`);
   basketSum();
 }
@@ -1201,7 +1259,9 @@ const saveBasket = run(async () => {
   const items = P.basket.filter(b => b.grams > 0);
   if (!items.length) return toast('Bitte Mengen eintragen');
   if (P.mode === 'recipe'){ items.forEach(b => R.items.push({ name: b.name, grams: b.grams, per: b.per })); P.basket = []; drawRecipe(); return; }
-  await addMany('log', items.map(b => ({ day: S.day, data: { slot: P.slot, name: b.name, grams: b.grams, per: b.per, ...roundN(scale(b.per, b.grams)) } })));
+  const rows = items.map(b => ({ day: S.day, data: { slot: P.slot, name: b.name, grams: b.grams, per: b.per, ...roundN(scale(b.per, b.grams)) } }));
+  await addMany('log', rows);
+  if (P.sendTo && S.partner) await sendMeal(rows.map(r => r.data), P.slot, S.day);
   P.basket = []; closeSheet(); toast(items.length === 1 ? 'Gespeichert' : items.length + ' Lebensmittel gespeichert'); render();
 });
 function offMap(p){
@@ -1522,7 +1582,7 @@ function drawWorkout(){
       ${e.sets.map((s, j) => { const ls = lastSet(e.name, j); return `<div class="setrow"><span class="n">${j + 1}</span>
         <input inputmode="decimal" aria-label="Gewicht in kg" placeholder="${ls ? esc(ls.kg) : 'kg'}" value="${esc(s.kg)}" oninput="W.exercises[${i}].sets[${j}].kg=this.value">
         <span class="muted">×</span>
-        <input inputmode="numeric" aria-label="Wiederholungen" placeholder="${ls ? esc(ls.reps) : 'Wdh'}" value="${esc(s.reps)}" oninput="W.exercises[${i}].sets[${j}].reps=this.value" onchange="if(this.value)startRest()">
+        <input inputmode="numeric" aria-label="Wiederholungen" placeholder="${ls ? esc(ls.reps) : 'Wdh'}" value="${esc(s.reps)}" oninput="W.exercises[${i}].sets[${j}].reps=this.value" onchange="if(this.value)autoRest()">
         <button class="btn sm ghost" style="padding:4px" aria-label="Wie letztes Mal" ${ls ? '' : 'disabled'} onclick="copyLast(${i},${j})">=</button>
         <button class="iconbtn" aria-label="Satz entfernen" onclick="W.exercises[${i}].sets.splice(${j},1);drawWorkout()">×</button></div>`; }).join('')}
       <button class="btn sm ghost" onclick="addSet(${i})">+ Satz</button></div>`).join('')}
@@ -1532,7 +1592,7 @@ function drawWorkout(){
     </div><div id="restbar" class="restbar"></div>`);
   tickRest(); saveDraft();
 }
-function copyLast(i, j){ const e = W.exercises[i]; const l = W.last[e.name.toLowerCase()]; const s = l && (l.sets[j] || l.sets.at(-1)); if (s){ e.sets[j] = { kg: s.kg, reps: s.reps }; startRest(); drawWorkout(); } }
+function copyLast(i, j){ const e = W.exercises[i]; const l = W.last[e.name.toLowerCase()]; const s = l && (l.sets[j] || l.sets.at(-1)); if (s){ e.sets[j] = { kg: s.kg, reps: s.reps }; autoRest(); drawWorkout(); } }
 function addSet(i){ const s = W.exercises[i].sets; const prev = s.at(-1) || { kg:'', reps:'' }; s.push({ kg: prev.kg, reps: prev.reps }); drawWorkout(); }
 const saveWorkout = run(async () => {
   const exercises = W.exercises.map(e => ({ name: e.name.trim(), target: e.target || '', sets: e.sets.filter(s => num(s.reps)).map(s => ({ kg: num(s.kg), reps: num(s.reps) })) }))
@@ -1656,6 +1716,7 @@ async function rProfil(){
     <div class="btns" style="margin-top:0"><button class="btn ghost" onclick="runAdaptive()">Jetzt berechnen</button>${d.adaptiveTdee ? `<button class="btn line" onclick="applyAdaptive(0)">Wieder Formel nutzen</button>` : ''}</div></div></div>
 
   <div class="sec"><h2>Training</h2><div class="card"><label class="f" style="margin:0"><span>Standarddauer Pausentimer</span><select onchange="saveRest(this.value)">${[60,90,120,150,180,240].map(s => `<option value="${s}" ${restDefault() === s ? 'selected' : ''}>${Math.floor(s / 60)}:${z(s % 60)} Minuten</option>`).join('')}</select></label>
+    <label class="row tap" style="padding:14px 0 0;border:0"><div class="grow"><div class="t">Pausentimer automatisch starten</div><div class="s">Startet nach jedem eingetragenen Satz. Aus: nur per Knopf. Auch direkt im Training umschaltbar.</div></div><input type="checkbox" class="switch" ${restAuto() ? 'checked' : ''} onchange="setRestAuto(this.checked)" aria-label="Pausentimer automatisch starten"></label>
     <label class="row tap" style="padding:14px 0 0;border:0"><div class="grow"><div class="t">Ton am Ende der Pause</div><div class="s">Ohne Ton zeigt die Leiste das Ende nur farbig an.</div></div><input type="checkbox" class="switch" ${S.me.data.restSound !== false ? 'checked' : ''} onchange="saveRestSound(this.checked)" aria-label="Ton am Ende der Pause"></label></div></div>
   <div class="sec"><h2>Freigaben</h2><p class="small muted">Was ${S.partner ? esc(nameOf(S.partner)) : 'dein Partner'} von dir sehen darf. Gilt sofort und wird in der Datenbank durchgesetzt.</p><div class="list">${SHARE.map(([k, l, s]) => `<label class="row tap"><div class="grow"><div class="t">${l}</div><div class="s">${s}</div></div><input type="checkbox" class="switch" ${shares(S.me, k) ? 'checked' : ''} onchange="setShare('${k}',this.checked)" aria-label="${l} teilen"></label>`).join('')}</div></div>
   <div class="sec"><h2>Partner</h2><div class="card">`;
