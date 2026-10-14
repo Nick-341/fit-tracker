@@ -251,6 +251,20 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .switch:checked::after{transform:translateX(20px)}
 @media (prefers-reduced-motion:reduce){.switch,.switch::after{transition:none}}
 
+/* Offline, Korb, Entwurf */
+.net-wrap{max-width:560px;margin:0 auto}
+.net-wrap:empty{display:none}
+.netbar{display:block;width:100%;margin-top:8px;border:0;border-radius:12px;padding:8px 12px;background:var(--surface);color:var(--ink);font-weight:700;font-size:13px;text-align:center}
+.netbar.off{background:var(--ink);color:var(--bg)}
+.bbar{position:sticky;bottom:0;margin:14px -4px 0;background:var(--accent);color:var(--on-accent);border-radius:20px;padding:12px 12px 12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.2)}
+.bbar .btn{background:var(--on-accent);color:var(--accent)}
+.gin{width:76px;min-height:40px;text-align:center;font-weight:800;padding:6px}
+.slotsel{width:auto;max-width:48%;min-height:40px;padding:6px 8px;font-size:14px;font-weight:700}
+.draft{background:var(--accent);color:var(--on-accent);border-radius:20px;padding:14px 16px;margin-bottom:16px}
+.draft .btn{background:var(--on-accent);color:var(--accent)}
+.draft .btn.line{background:none;border-color:var(--on-accent);color:var(--on-accent)}
+.pend{color:var(--mine);font-weight:900}
+
 /* Login */
 .auth{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 48px) 20px 40px}
 .auth h1{font-size:46px;margin:18px 0 6px}
@@ -270,7 +284,7 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
     <h1 id="ttl">Heute</h1>
   </div>
   <button class="lvl empty" id="lvl" onclick="openGame()" aria-label="Level und Abzeichen"></button>
-</div><div class="who-wrap" id="who"></div></header>
+</div><div id="net" class="net-wrap"></div><div class="who-wrap" id="who"></div></header>
 <main id="view"></main>
 <nav class="tabs"><div class="tabs-in" id="tabs">
   <button data-tab="heute">Heute</button>
@@ -283,8 +297,8 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 <div id="toast" role="status"></div>
 
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" integrity="sha384-c9d8RFSL+u3exBOJ4Yp3HUJXS4znl9f+z66d1y54ig+ea249SpqR+w1wyvXz/lk+" crossorigin="anonymous"></script>
 <script>
 /* ================= Hilfsfunktionen ================= */
 const $ = s => document.querySelector(s);
@@ -326,44 +340,162 @@ const viewId = () => (S.who === 'partner' && S.partner) ? S.partner.id : S.user.
 const own = () => viewId() === S.user.id;
 const nameOf = p => p?.display_name || 'Partner';
 
-async function q(kind, uid, from, to){
-  let r = sb.from('entries').select('*').eq('user_id', uid).eq('kind', kind);
-  if (from) r = r.gte('day', from);
-  if (to) r = r.lte('day', to);
-  const { data, error } = await r.order('day', {ascending:true, nullsFirst:true}).order('created_at');
-  if (error) throw error;
-  return data || [];
+/* ---------- Offline-Schicht: Lese-Cache und Warteschlange ---------- */
+const NET_ERR = e => !navigator.onLine || /fetch|network|load failed|offline|timed? ?out/i.test(e?.message || String(e || ''));
+const LSJ = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const LSS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+let QUEUE = LSJ('spotter:queue', []);
+const saveQueue = () => { LSS('spotter:queue', QUEUE); netUI(); };
+function cacheSet(key, rows){
+  const c = LSJ('spotter:qc', { keys: [], data: {} });
+  c.keys = c.keys.filter(k => k !== key); c.keys.push(key); c.data[key] = rows;
+  while (c.keys.length > 150) delete c.data[c.keys.shift()];
+  if (!LSS('spotter:qc', c)){ c.keys.slice(0, 75).forEach(k => delete c.data[k]); c.keys = c.keys.slice(75); LSS('spotter:qc', c); }
 }
+const cacheGet = key => LSJ('spotter:qc', { data: {} }).data[key];
+function setOnline(on){ if (S.offline === !on) return; S.offline = !on; netUI(); if (on) syncQueue(); }
+function netUI(){
+  const el = $('#net'); if (!el) return;
+  const n = QUEUE.filter(o => o.op !== 'profile').length;
+  if (S.syncing) el.innerHTML = `<div class="netbar">Synchronisiere …</div>`;
+  else if (S.offline) el.innerHTML = `<div class="netbar off">Offline${n ? `. ${n} ${n === 1 ? 'Eintrag wartet' : 'Einträge warten'} auf Upload` : '. Neue Einträge werden später hochgeladen'}</div>`;
+  else if (n) el.innerHTML = `<button class="netbar" onclick="syncQueue()">${n} ${n === 1 ? 'Eintrag wartet' : 'Einträge warten'} auf Upload. Jetzt senden</button>`;
+  else el.innerHTML = '';
+}
+function applyQueue(rows, kind, uid, from, to){
+  if (uid !== S.user?.id || !QUEUE.length) return rows;
+  let out = rows.slice();
+  for (const o of QUEUE){
+    if (o.op === 'insert' && o.kind === kind && (!from || (o.day && o.day >= from)) && (!to || (o.day && o.day <= to)) && (from || to || true))
+      out.push({ id: o.tid, user_id: uid, kind, day: o.day, data: o.data, created_at: o.at, pending: true });
+    if (o.op === 'update'){ const r = out.find(x => x.id === o.id); if (r){ r.data = o.data; if (o.day !== undefined) r.day = o.day; r.pending = true; } }
+    if (o.op === 'delete') out = out.filter(x => x.id !== o.id);
+  }
+  if ((from || to)) out = out.filter(r => (!from || r.day >= from) && (!to || r.day <= to));
+  return out;
+}
+async function q(kind, uid, from, to){
+  const key = [kind, uid, from || '', to || ''].join('|');
+  let rows;
+  try {
+    let r = sb.from('entries').select('*').eq('user_id', uid).eq('kind', kind);
+    if (from) r = r.gte('day', from);
+    if (to) r = r.lte('day', to);
+    const { data, error } = await r.order('day', {ascending:true, nullsFirst:true}).order('created_at');
+    if (error) throw error;
+    rows = data || []; cacheSet(key, rows); setOnline(true);
+  } catch (e) {
+    if (!NET_ERR(e)) throw e;
+    setOnline(false); rows = cacheGet(key) || [];
+  }
+  return applyQueue(rows, kind, uid, from, to);
+}
+const tmpId = () => 'tmp-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function enqueue(o){ QUEUE.push({ ...o, at: new Date().toISOString() }); saveQueue(); setOnline(false); }
 async function add(kind, day, data){
   invalidateMe();
-  const { data: row, error } = await sb.from('entries').insert({ kind, day, data }).select().single();
-  if (error) throw error; return row;
+  try {
+    if (!navigator.onLine) throw new Error('offline');
+    const { data: row, error } = await sb.from('entries').insert({ kind, day, data }).select().single();
+    if (error) throw error; return row;
+  } catch (e) {
+    if (!NET_ERR(e)) throw e;
+    const tid = tmpId(); enqueue({ op: 'insert', tid, kind, day, data });
+    return { id: tid, user_id: S.user.id, kind, day, data, pending: true };
+  }
+}
+async function addMany(kind, rows){
+  invalidateMe();
+  try {
+    if (!navigator.onLine) throw new Error('offline');
+    const { error } = await sb.from('entries').insert(rows.map(r => ({ kind, day: r.day, data: r.data })));
+    if (error) throw error;
+  } catch (e) {
+    if (!NET_ERR(e)) throw e;
+    rows.forEach(r => enqueue({ op: 'insert', tid: tmpId(), kind, day: r.day, data: r.data }));
+  }
 }
 async function upd(id, data, day){
   invalidateMe();
-  const patch = { data }; if (day !== undefined) patch.day = day;
-  const { error } = await sb.from('entries').update(patch).eq('id', id);
-  if (error) throw error;
+  const qi = QUEUE.find(o => o.op === 'insert' && o.tid === id);
+  if (qi){ qi.data = data; if (day !== undefined) qi.day = day; saveQueue(); return; }
+  try {
+    if (!navigator.onLine) throw new Error('offline');
+    const patch = { data }; if (day !== undefined) patch.day = day;
+    const { error } = await sb.from('entries').update(patch).eq('id', id);
+    if (error) throw error;
+  } catch (e) { if (!NET_ERR(e)) throw e; enqueue({ op: 'update', id, data, day }); }
 }
-async function del(id){ invalidateMe(); const { error } = await sb.from('entries').delete().eq('id', id); if (error) throw error; }
+async function del(id){
+  invalidateMe();
+  const i = QUEUE.findIndex(o => o.op === 'insert' && o.tid === id);
+  if (i >= 0){ QUEUE.splice(i, 1); saveQueue(); return; }
+  try {
+    if (!navigator.onLine) throw new Error('offline');
+    const { error } = await sb.from('entries').delete().eq('id', id);
+    if (error) throw error;
+  } catch (e) { if (!NET_ERR(e)) throw e; enqueue({ op: 'delete', id }); }
+}
+async function syncQueue(){
+  if (S.syncing || !QUEUE.length || !S.user || !navigator.onLine) return;
+  S.syncing = true; netUI();
+  let done = 0, failed = 0;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) throw new Error('Keine Sitzung');
+    while (QUEUE.length){
+      const o = QUEUE[0]; let res;
+      if (o.op === 'insert') res = await sb.from('entries').insert({ kind: o.kind, day: o.day, data: o.data });
+      else if (o.op === 'update'){ const patch = { data: o.data }; if (o.day !== undefined) patch.day = o.day; res = await sb.from('entries').update(patch).eq('id', o.id); }
+      else if (o.op === 'delete') res = await sb.from('entries').delete().eq('id', o.id);
+      else if (o.op === 'profile') res = await sb.from('profiles').update({ data: S.me.data, display_name: S.me.display_name, updated_at: new Date().toISOString() }).eq('id', S.user.id);
+      if (res?.error){ if (NET_ERR(res.error)) throw res.error; failed++; }
+      else done++;
+      QUEUE.shift(); saveQueue();
+    }
+    S.offline = false;
+  } catch (e) { if (NET_ERR(e)) S.offline = true; }
+  S.syncing = false; netUI();
+  if (done || failed){ invalidateMe(); if (done) toast(done === 1 ? '1 Eintrag hochgeladen' : done + ' Einträge hochgeladen'); if (failed) toast(failed + ' Einträge konnten nicht gespeichert werden'); if (!sheetOpen()) render(); }
+}
+window.addEventListener('online', () => { setOnline(true); syncQueue(); });
+window.addEventListener('offline', () => setOnline(false));
+setInterval(() => { if (QUEUE.length && navigator.onLine) syncQueue(); }, 30000);
+
 async function saveProfile(patch, name){
   S.me.data = { ...S.me.data, ...patch };
   if (name !== undefined) S.me.display_name = name;
-  const { error } = await sb.from('profiles').update({ data: S.me.data, display_name: S.me.display_name, updated_at: new Date().toISOString() }).eq('id', S.user.id);
-  if (error) throw error;
+  LSS('spotter:profiles', { me: S.me, partner: S.partner });
+  try {
+    if (!navigator.onLine) throw new Error('offline');
+    const { error } = await sb.from('profiles').update({ data: S.me.data, display_name: S.me.display_name, updated_at: new Date().toISOString() }).eq('id', S.user.id);
+    if (error) throw error;
+  } catch (e) {
+    if (!NET_ERR(e)) throw e;
+    if (!QUEUE.some(o => o.op === 'profile')) enqueue({ op: 'profile' });
+  }
 }
 async function loadProfiles(){
-  let { data, error } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
-  if (error) throw error;
-  if (!data){
-    const name = S.user.user_metadata?.name || S.user.email.split('@')[0];
-    const r = await sb.from('profiles').insert({ id: S.user.id, display_name: name }).select().single();
-    if (r.error) throw r.error; data = r.data;
-  }
-  S.me = data; S.partner = null;
-  if (data.partner_id){
-    const r = await sb.from('profiles').select('*').eq('id', data.partner_id).maybeSingle();
-    S.partner = r.data || null;
+  try {
+    let { data, error } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
+    if (error) throw error;
+    if (!data){
+      const name = S.user.user_metadata?.name || (S.user.email || '').split('@')[0];
+      const r = await sb.from('profiles').insert({ id: S.user.id, display_name: name }).select().single();
+      if (r.error) throw r.error; data = r.data;
+    }
+    S.me = data; S.partner = null;
+    if (data.partner_id){
+      const r = await sb.from('profiles').select('*').eq('id', data.partner_id).maybeSingle();
+      S.partner = r.data || null;
+    }
+    if (QUEUE.some(o => o.op === 'profile')){ const c = LSJ('spotter:profiles', null); if (c?.me) { S.me.data = c.me.data; S.me.display_name = c.me.display_name; } }
+    LSS('spotter:profiles', { me: S.me, partner: S.partner });
+    setOnline(true);
+  } catch (e) {
+    const c = LSJ('spotter:profiles', null);
+    if (!NET_ERR(e) || !c?.me || c.me.id !== S.user.id) throw e;
+    S.me = c.me; S.partner = c.partner; setOnline(false);
   }
   if (!S.partner) S.who = 'me';
 }
@@ -685,16 +817,16 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 const CHANGELOG = [
-  ['Pausentimer', 'Startet automatisch, sobald du Wiederholungen einträgst. Dauer im Profil einstellbar.'],
-  ['Essen kopieren', 'Einen ganzen Tag oder einzelne Mahlzeiten von einem anderen Datum übernehmen.'],
-  ['Kudos', 'Gib deinem Partner Anerkennung für ein Training oder einen guten Tag.'],
-  ['Profilfoto', 'Unter Profil ein eigenes Bild hochladen. Bis dahin zeigt Spotter deine Initialen.'],
-  ['Freigaben', 'Lege fest, was dein Partner sieht: Ernährung, Training, Gewicht, Maße, Level.'],
-  ['Mehr Sicherheit', 'Optional automatisch abmelden nach Inaktivität und auf allen Geräten abmelden.'],
-  ['Übungsfortschritt', 'Verlauf und Bestwerte für jede Übung unter Training.'],
-  ['Wochenrückblick', 'Unter Heute: Woche auf einen Blick, mit Hinweisen vom Coach.']
+  ['Offline-Modus', 'Spotter startet auch ohne Empfang. Training, Gewicht und Essen werden zwischengespeichert und automatisch hochgeladen, sobald wieder Netz da ist.'],
+  ['Training geht nicht verloren', 'Eine laufende Einheit wird nach jeder Eingabe auf dem Handy gesichert und lässt sich unter Training fortsetzen.'],
+  ['Sammelkorb', 'Mehrere Lebensmittel nacheinander antippen oder scannen, Mengen am Ende prüfen und alles auf einmal speichern.'],
+  ['Scannen am Stück', 'Die Kamera bleibt an, jedes erkannte Produkt landet direkt im Korb.'],
+  ['Kopieren mit Ziel', 'Beim Kopieren wählst du für jede Mahlzeit, wohin sie soll, zum Beispiel vom Abendessen ins Mittagessen.'],
+  ['Einträge bearbeiten', 'Tippe auf einen Eintrag unter Essen, um die Menge zu ändern, ihn zu kopieren oder zu verschieben.'],
+  ['Datenexport', 'Unter Profil alle eigenen Daten als Datei sichern.'],
+  ['Mehr Sicherheit', 'Die externen Programmbibliotheken werden vor dem Laden auf Veränderungen geprüft.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
@@ -800,24 +932,53 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) tick
 
 /* ================= Essen kopieren ================= */
 let CP = null;
-function openCopy(){ CP = { from: addDays(S.day, -1), slots: SLOTS.map(s => s[0]), logs: [] }; drawCopy(); loadCopy(); }
+function openCopy(){ CP = { from: addDays(S.day, -1), map: Object.fromEntries(SLOTS.map(s => [s[0], s[0]])), logs: [] }; drawCopy(); loadCopy(); }
+const slotOpts = (cur, withSkip) => (withSkip ? `<option value="" ${!cur ? 'selected' : ''}>Nicht kopieren</option>` : '') + SLOTS.map(([k, l]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${l}</option>`).join('');
+function copySel(){ return CP.logs.filter(l => CP.map[l.data.slot || 'snack']); }
 function drawCopy(){
-  const sel = CP.logs.filter(l => CP.slots.includes(l.data.slot || 'snack')), t = sum(sel);
+  const sel = copySel(), t = sum(sel);
+  const src = SLOTS.filter(([k]) => CP.logs.some(x => (x.data.slot || 'snack') === k));
   openSheet(`<div class="sh-head"><h3>Essen kopieren</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     <label class="f"><span>Von welchem Tag?</span><input type="date" value="${CP.from}" max="${today()}" onchange="CP.from=this.value;loadCopy()"></label>
     <div class="quick">${[[-1,'Gestern'],[-7,'Vor 1 Woche']].map(([d, l]) => `<button class="btn sm ghost" onclick="CP.from=addDays(S.day,${d});loadCopy()">${l}</button>`).join('')}</div>
-    <div class="f"><span>Welche Mahlzeiten?</span></div>
-    <div class="chips">${SLOTS.map(([k, l]) => { const n = CP.logs.filter(x => (x.data.slot || 'snack') === k).length; return `<label class="chip"><input type="checkbox" ${CP.slots.includes(k) ? 'checked' : ''} ${n ? '' : 'disabled'} onchange="CP.slots=this.checked?[...CP.slots,'${k}']:CP.slots.filter(x=>x!=='${k}');drawCopy()"><span>${l} (${n})</span></label>`; }).join('')}</div>
-    <div class="card">${CP.loading ? '<span class="muted">Lädt …</span>' : sel.length ? `<b class="num" style="font-size:28px">${fmt(t.kcal)} kcal</b><div class="small muted">${sel.length} Einträge, Protein ${fmt(t.p)} g</div>` : '<span class="muted">An diesem Tag ist nichts eingetragen.</span>'}</div>
+    ${CP.loading ? '<div class="card"><span class="muted">Lädt …</span></div>' : src.length ? `<div class="f"><span>Was kommt wohin?</span></div><div class="list">${src.map(([k, l]) => { const items = CP.logs.filter(x => (x.data.slot || 'snack') === k);
+      return `<div class="row"><div class="grow"><div class="t">${l}</div><div class="s">${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}, ${fmt(sum(items).kcal)} kcal</div></div><span class="muted" aria-hidden="true">→</span><select class="slotsel" aria-label="Ziel für ${l}" onchange="CP.map['${k}']=this.value;drawCopy()">${slotOpts(CP.map[k], true)}</select></div>`; }).join('')}</div>
+      <div class="card" style="margin-top:12px"><b class="num" style="font-size:28px">${fmt(t.kcal)} kcal</b><div class="small muted">${sel.length} Einträge, Protein ${fmt(t.p)} g</div></div>` : '<div class="note">An diesem Tag ist nichts eingetragen.</div>'}
     <div class="btns"><button class="btn accent full" ${sel.length ? '' : 'disabled'} onclick="doCopy()">Auf ${dayLabel(S.day) === 'Heute' ? 'heute' : shortDate(S.day)} kopieren</button></div>`);
 }
 async function loadCopy(){ CP.loading = true; drawCopy(); try { CP.logs = await q('log', S.user.id, CP.from, CP.from); } catch (e) { CP.logs = []; } CP.loading = false; drawCopy(); }
 const doCopy = run(async () => {
-  const sel = CP.logs.filter(l => CP.slots.includes(l.data.slot || 'snack'));
-  invalidateMe();
-  const { error } = await sb.from('entries').insert(sel.map(l => ({ kind: 'log', day: S.day, data: l.data })));
-  if (error) throw error;
+  const sel = copySel();
+  await addMany('log', sel.map(l => ({ day: S.day, data: { ...l.data, slot: CP.map[l.data.slot || 'snack'] } })));
   closeSheet(); toast(sel.length + ' Einträge kopiert'); render();
+});
+/* Einzelner Eintrag: Menge, kopieren, verschieben */
+let EN = null;
+function openEntry(id){
+  const l = S.logIdx?.[id]; if (!l) return;
+  EN = { l, day: S.day, slot: l.data.slot || 'snack', grams: l.data.grams || 0 };
+  drawEntry();
+}
+function drawEntry(){
+  const l = EN.l, d = l.data, canG = d.per && d.grams;
+  openSheet(`<div class="sh-head"><h3>${esc(d.name)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <div class="card"><b class="num" style="font-size:30px" id="enk">${fmt(canG ? scale(d.per, EN.grams).kcal : d.kcal)} kcal</b><div class="small muted">Protein ${fmt1(d.p)} g, Kohlenhydrate ${fmt1(d.c)} g, Fett ${fmt1(d.f)} g</div></div>
+    ${canG ? `<div class="sec" style="margin-top:14px"><label class="f"><span>Menge in g</span><div class="searchrow" style="margin:0"><input inputmode="decimal" value="${EN.grams}" oninput="EN.grams=num(this.value);$('#enk').textContent=fmt(scale(EN.l.data.per,EN.grams).kcal)+' kcal'"><button class="btn" onclick="entryGrams()">Ändern</button></div></label></div>` : ''}
+    <div class="sec"><h3 style="margin-bottom:8px">Kopieren oder verschieben</h3>
+      <div class="grid2"><label class="f"><span>Tag</span><input type="date" value="${EN.day}" max="${today()}" onchange="EN.day=this.value"></label>
+      <label class="f"><span>Mahlzeit</span><select onchange="EN.slot=this.value">${slotOpts(EN.slot)}</select></label></div>
+      <div class="btns" style="margin-top:0"><button class="btn accent" style="flex:1" onclick="entryCopy(false)">Kopieren</button><button class="btn line" style="flex:1" onclick="entryCopy(true)">Verschieben</button></div></div>
+    <div class="btns"><button class="btn danger full" onclick="delLog('${l.id}');closeSheet()">Eintrag löschen</button></div>`);
+}
+const entryGrams = run(async () => {
+  const d = EN.l.data; if (!EN.grams) return toast('Bitte eine Menge eingeben');
+  await upd(EN.l.id, { ...d, grams: EN.grams, ...roundN(scale(d.per, EN.grams)) });
+  closeSheet(); toast('Menge geändert'); render();
+});
+const entryCopy = run(async move => {
+  const d = { ...EN.l.data, slot: EN.slot };
+  if (move) await upd(EN.l.id, d, EN.day); else await add('log', EN.day, d);
+  closeSheet(); toast(move ? 'Verschoben' : 'Kopiert' + (EN.day !== S.day ? ' nach ' + dayLabel(EN.day) : '')); render();
 });
 
 /* ================= Übungsfortschritt ================= */
@@ -903,7 +1064,25 @@ const getLS = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e)
 const setLS = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function touchActive(){ setLS('lastActive', String(Date.now())); }
 function inactiveTooLong(){ const days = num(getLS('autoLogoutDays', '0')), last = num(getLS('lastActive', '0')); return days > 0 && last > 0 && Date.now() - last > days * 864e5; }
-const logoutAll = run(async () => { if (!confirm('Auf allen Geräten abmelden? Du musst dich überall neu anmelden.')) return; await sb.auth.signOut({ scope: 'global' }); });
+const queueWarn = () => QUEUE.length ? `\n\nAchtung: ${QUEUE.length} Einträge sind noch nicht hochgeladen und gehen verloren.` : '';
+const doLogout = run(async () => { if (QUEUE.length && !confirm('Wirklich abmelden?' + queueWarn())) return; await sb.auth.signOut(); });
+const logoutAll = run(async () => { if (!confirm('Auf allen Geräten abmelden? Du musst dich überall neu anmelden.' + queueWarn())) return; await sb.auth.signOut({ scope: 'global' }); });
+/* ================= Datenexport ================= */
+const exportData = run(async () => {
+  if (!navigator.onLine) return toast('Für den Export wird eine Verbindung benötigt');
+  toast('Export wird erstellt …');
+  let rows = [], from = 0;
+  for (;;){
+    const { data, error } = await sb.from('entries').select('*').eq('user_id', S.user.id).order('day', { ascending: true, nullsFirst: true }).range(from, from + 999);
+    if (error) throw error; rows = rows.concat(data || []); if (!data || data.length < 1000) break; from += 1000;
+  }
+  const out = { app: 'Spotter', version: APP_VERSION, exportedAt: new Date().toISOString(), profile: { name: S.me.display_name, data: S.me.data }, entries: rows };
+  const name = `spotter-export-${today()}.json`;
+  const file = new File([JSON.stringify(out, null, 2)], name, { type: 'application/json' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })){ try { await navigator.share({ files: [file], title: 'Spotter Export' }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+});
 
 /* ================= Essen ================= */
 async function rEssen(){
@@ -911,6 +1090,7 @@ async function rEssen(){
   if (!mine && !shares(p, 'nutrition')) return privNote('die Ernährung');
   const [logs, wos] = await Promise.all([ q('log', uid, S.day, S.day), q('workout', uid, S.day, S.day) ]);
   await loadRecipes();
+  S.logIdx = Object.fromEntries(logs.map(l => [l.id, l]));
   const tot = sum(logs), tgt = targetFor(p, S.day, wos.length > 0);
   let h = `<div class="card"><div class="big" style="font-size:40px">${fmt(tot.kcal)}<small>${tgt ? `von ${fmt(tgt.kcal)} kcal` : 'kcal'}</small></div>
     <div class="small muted">Protein ${fmt(tot.p)}${tgt ? '/' + tgt.p : ''} g, Kohlenhydrate ${fmt(tot.c)}${tgt ? '/' + tgt.c : ''} g, Fett ${fmt(tot.f)}${tgt ? '/' + tgt.f : ''} g</div>${mine ? `<div class="btns" style="margin-top:12px"><button class="btn sm ghost" onclick="openCopy()">Essen von anderem Tag kopieren</button></div>` : ''}</div>`;
@@ -919,7 +1099,7 @@ async function rEssen(){
     const items = logs.filter(l => (l.data.slot || 'snack') === k);
     const st = sum(items);
     h += `<div class="slot-h"><span>${label}</span><span>${fmt(st.kcal)} kcal</span></div>`;
-    h += items.map(l => `<div class="row"><div class="grow"><div class="t">${esc(l.data.name)}</div><div class="s">${l.data.grams ? fmt(l.data.grams) + ' g, ' : ''}${l.data.factor && l.data.factor !== 1 ? '×' + String(l.data.factor).replace('.', ',') + ', ' : ''}P ${fmt(l.data.p)} / KH ${fmt(l.data.c)} / F ${fmt(l.data.f)}</div></div><div class="k">${fmt(l.data.kcal)}</div>${mine ? `<button class="iconbtn" aria-label="Eintrag löschen" onclick="delLog('${l.id}')">×</button>` : ''}</div>`).join('');
+    h += items.map(l => `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openEntry('${l.id}')"` : ''}><div class="grow"><div class="t">${esc(l.data.name)}${l.pending ? ' <span class="pend" title="Wartet auf Upload">⇡</span>' : ''}</div><div class="s">${l.data.grams ? fmt(l.data.grams) + ' g, ' : ''}${l.data.factor && l.data.factor !== 1 ? '×' + String(l.data.factor).replace('.', ',') + ', ' : ''}P ${fmt(l.data.p)} / KH ${fmt(l.data.c)} / F ${fmt(l.data.f)}</div></div><div class="k">${fmt(l.data.kcal)}</div>${mine ? `<button class="iconbtn" aria-label="Eintrag löschen" onclick="event.stopPropagation();delLog('${l.id}')">×</button>` : ''}</div>`).join('');
     if (mine) h += `<div class="row"><button class="btn sm ghost" onclick="openPicker({mode:'log',slot:'${k}',title:'${label}'})">+ Hinzufügen</button></div>`;
     else if (!items.length) h += `<div class="row s muted">Nichts eingetragen</div>`;
   }
@@ -933,12 +1113,12 @@ async function rEssen(){
 }
 const delLog = run(async id => { await del(id); render(); });
 
-/* ---------- Lebensmittel-Auswahl ---------- */
+/* ---------- Lebensmittel-Auswahl mit Sammelkorb ---------- */
 let P = null;
 async function openPicker(opts){
-  P = { tab:'suche', results:[], lib:null, ...opts };
+  P = { tab:'suche', results:[], lib:null, basket:[], ...opts };
   drawPicker();
-  P.lib = await loadLib(); if (P.tab === 'suche') showResults(P.lib.slice(0, 30), 'Eigene und zuletzt verwendete');
+  P.lib = await loadLib(); if (P.tab === 'suche' && !P.results.length) showResults(P.lib.slice(0, 30), 'Eigene und zuletzt verwendete');
 }
 async function loadLib(){
   const ids = [S.user.id, S.partner?.id].filter(Boolean);
@@ -948,13 +1128,16 @@ async function loadLib(){
   logs.reverse().forEach(l => { if (!l.data.per) return; const k = l.data.name.toLowerCase(); if (!seen.has(k)){ seen.add(k); out.push({ name:l.data.name, per:l.data.per, serving:l.data.grams, src:'zuletzt' }); } });
   return out;
 }
+function pickerClose(){
+  if (P.basket.length && !confirm('Der Korb enthält ' + P.basket.length + ' Lebensmittel. Verwerfen?')) return;
+  stopScan(); if (P.mode === 'recipe') drawRecipe(); else closeSheet();
+}
 function drawPicker(){
   stopScan();
   const tabs = [['suche','Suchen'],['scan','Scannen'], ...(P.mode === 'log' ? [['vorlage','Vorlagen']] : []), ['eigen','Eigenes']];
-  const back = P.mode === 'recipe' ? `<button class="btn sm ghost" onclick="drawRecipe()">Zurück</button>` : `<button class="btn sm ghost" onclick="closeSheet()">Schließen</button>`;
-  let h = `<div class="sh-head"><h3>${esc(P.title)}</h3>${back}</div><div class="seg">${tabs.map(([k, l]) => `<button class="${P.tab === k ? 'on' : ''}" onclick="P.tab='${k}';drawPicker()">${l}</button>`).join('')}</div>`;
-  if (P.tab === 'suche') h += `<div class="searchrow"><input id="pq" type="search" placeholder="z. B. Skyr, Haferflocken" enterkeyhint="search" onkeydown="if(event.key==='Enter')doSearch()"><button class="btn" onclick="doSearch()">Suchen</button></div><div id="pres"><p class="muted">Lädt …</p></div>`;
-  if (P.tab === 'scan') h += `<div id="reader"></div><p class="small muted">Halte den Barcode ruhig in den Rahmen. Alternativ die Nummer eintippen:</p><div class="searchrow"><input id="bc" inputmode="numeric" placeholder="Barcode-Nummer"><button class="btn" onclick="lookupCode($('#bc').value.trim())">Suchen</button></div><div id="scanmsg"></div>`;
+  let h = `<div class="sh-head"><h3>${esc(P.title)}</h3><button class="btn sm ghost" onclick="pickerClose()">${P.mode === 'recipe' ? 'Zurück' : 'Schließen'}</button></div><div class="seg">${tabs.map(([k, l]) => `<button class="${P.tab === k ? 'on' : ''}" onclick="P.tab='${k}';drawPicker()">${l}</button>`).join('')}</div>`;
+  if (P.tab === 'suche') h += `<div class="searchrow"><input id="pq" type="search" placeholder="z. B. Skyr, Haferflocken" enterkeyhint="search" value="${esc(P.q || '')}" onkeydown="if(event.key==='Enter')doSearch()"><button class="btn" onclick="doSearch()">Suchen</button></div><p class="small muted" style="margin:-4px 0 10px">Tippen legt das Lebensmittel in den Korb, Mengen änderst du vor dem Speichern.</p><div id="pres"><p class="muted">Lädt …</p></div>`;
+  if (P.tab === 'scan') h += `<div id="reader"></div><p class="small muted">Scanne nacheinander alle Produkte, jedes landet direkt im Korb. Oder die Nummer eintippen:</p><div class="searchrow"><input id="bc" inputmode="numeric" placeholder="Barcode-Nummer"><button class="btn" onclick="lookupCode($('#bc').value.trim())">Suchen</button></div><div id="scanmsg"></div>`;
   if (P.tab === 'vorlage'){
     const recs = Object.values(S.rc);
     h += recs.length ? '<div class="list">' + recs.map(r => { const t = recipeTotals(r, r.data.factor || 1);
@@ -967,23 +1150,60 @@ function drawPicker(){
       <div class="grid4">${[['ek','kcal'],['ep','Protein'],['ec','KH'],['ef','Fett']].map(([i, l]) => `<label class="f"><span>${l}</span><input id="${i}" inputmode="decimal"></label>`).join('')}</div>
       <label class="f"><span>Menge in g</span><input id="eg" inputmode="decimal" value="100"></label>
       <label class="check"><input type="checkbox" id="esave" checked> In meiner Liste speichern</label>
-      <button class="btn full" onclick="saveOwnFood()">${P.mode === 'log' ? 'Hinzufügen' : 'Als Zutat hinzufügen'}</button>`;
-    if (P.mode === 'log') h += `<div class="sec"><h3 style="font-size:19px;margin-bottom:6px">Schnelleintrag</h3><p class="small muted" style="margin-top:0">Nur Gesamtwerte, z. B. für ein Restaurantessen.</p>
+      <button class="btn full" onclick="saveOwnFood()">In den Korb</button>`;
+    if (P.mode === 'log') h += `<div class="sec"><h3 style="font-size:19px;margin-bottom:6px">Schnelleintrag</h3><p class="small muted" style="margin-top:0">Nur Gesamtwerte, z. B. für ein Restaurantessen. Wird sofort gespeichert.</p>
       <label class="f"><span>Bezeichnung</span><input id="qn" placeholder="z. B. Pizza beim Italiener"></label>
       <div class="grid4">${[['qk','kcal'],['qp','Protein'],['qc','KH'],['qf','Fett']].map(([i, l]) => `<label class="f"><span>${l}</span><input id="${i}" inputmode="decimal"></label>`).join('')}</div>
       <button class="btn full ghost" onclick="saveQuick()">Schnelleintrag speichern</button></div>`;
   }
+  h += '<div id="bbar"></div>';
   openSheet(h);
+  basketBar();
   if (P.tab === 'scan') startScan();
   if (P.tab === 'suche' && P.lib) showResults(P.results.length ? P.results : P.lib.slice(0, 30), P.results.length ? '' : 'Eigene und zuletzt verwendete');
 }
 function showResults(list, title){
   P.results = list;
   const el = $('#pres'); if (!el) return;
+  const inB = n => P.basket.filter(b => b.name === n).length;
   el.innerHTML = (title ? `<p class="small muted">${title}</p>` : '') + (list.length ? '<div class="list">' + list.map((f, i) =>
-    `<div class="row tap" onclick="drawAmount(P.results[${i}])"><div class="grow"><div class="t">${esc(f.name)}</div><div class="s">${f.brand ? esc(f.brand) + ', ' : ''}${f.src === 'off' ? 'Open Food Facts' : f.src === 'eigen' ? 'Eigene Liste' : 'Zuletzt verwendet'}</div></div><div class="k">${fmt(f.per.kcal)} <span class="small muted">/100 g</span></div></div>`).join('') + '</div>'
+    `<div class="row tap" onclick="basketAdd(P.results[${i}])"><div class="grow"><div class="t">${esc(f.name)}</div><div class="s">${f.brand ? esc(f.brand) + ', ' : ''}${fmt(f.per.kcal)} kcal/100 g, ${f.src === 'off' ? 'Open Food Facts' : f.src === 'eigen' ? 'Eigene Liste' : 'Zuletzt verwendet'}</div></div>${inB(f.name) ? `<span class="okdot">${inB(f.name)}</span>` : '<span class="plus" aria-hidden="true">+</span>'}</div>`).join('') + '</div>'
     : '<div class="note">Nichts gefunden. Versuche einen anderen Begriff oder lege das Lebensmittel unter Eigenes an.</div>');
 }
+function basketAdd(food, silent){
+  const g = r0(food.serving || 100);
+  P.basket.push({ name: food.name, brand: food.brand || '', grams: g, per: food.per });
+  if (!silent) toast(`${food.name}: ${g} g im Korb`);
+  basketBar();
+  if (P.tab === 'suche' && $('#pres')) showResults(P.results, '');
+}
+function basketBar(){
+  const el = $('#bbar'); if (!el) return;
+  if (!P.basket.length){ el.innerHTML = ''; return; }
+  const t = P.basket.reduce((a, b) => addN(a, scale(b.per, b.grams)), ZERO);
+  el.innerHTML = `<div class="bbar"><div><b>${P.basket.length} ${P.basket.length === 1 ? 'Lebensmittel' : 'Lebensmittel'}</b><div class="small" style="opacity:.8">${fmt(t.kcal)} kcal, ${fmt(t.p)} g Protein</div></div><button class="btn" onclick="drawBasket()">Prüfen und speichern</button></div>`;
+}
+function drawBasket(){
+  stopScan();
+  const t = P.basket.reduce((a, b) => addN(a, scale(b.per, b.grams)), ZERO);
+  openSheet(`<div class="sh-head"><h3>Korb</h3><button class="btn sm ghost" onclick="drawPicker()">Weitere hinzufügen</button></div>
+    ${P.mode === 'log' ? `<label class="f"><span>Mahlzeit</span><select onchange="P.slot=this.value">${SLOTS.map(([k, l]) => `<option value="${k}" ${P.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
+    <div class="list">${P.basket.map((b, i) => `<div class="row"><div class="grow"><div class="t">${esc(b.name)}</div><div class="s" id="bk${i}">${fmt(scale(b.per, b.grams).kcal)} kcal</div></div>
+      <input class="gin" inputmode="decimal" value="${b.grams}" aria-label="Menge in Gramm" oninput="P.basket[${i}].grams=num(this.value);$('#bk${i}').textContent=fmt(scale(P.basket[${i}].per,P.basket[${i}].grams).kcal)+' kcal';basketSum()"><span class="small muted">g</span>
+      <button class="iconbtn" aria-label="Entfernen" onclick="P.basket.splice(${i},1);P.basket.length?drawBasket():drawPicker()">×</button></div>`).join('')}</div>
+    <div class="card" style="margin-top:12px" id="bsum"></div>
+    <div class="btns"><button class="btn accent full" onclick="saveBasket()">${P.mode === 'log' ? 'Alle speichern' : 'Als Zutaten übernehmen'}</button></div>`);
+  basketSum();
+}
+function basketSum(){ const t = P.basket.reduce((a, b) => addN(a, scale(b.per, b.grams)), ZERO);
+  $('#bsum').innerHTML = `<b class="num" style="font-size:30px">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div>`; }
+const saveBasket = run(async () => {
+  const items = P.basket.filter(b => b.grams > 0);
+  if (!items.length) return toast('Bitte Mengen eintragen');
+  if (P.mode === 'recipe'){ items.forEach(b => R.items.push({ name: b.name, grams: b.grams, per: b.per })); P.basket = []; drawRecipe(); return; }
+  await addMany('log', items.map(b => ({ day: S.day, data: { slot: P.slot, name: b.name, grams: b.grams, per: b.per, ...roundN(scale(b.per, b.grams)) } })));
+  P.basket = []; closeSheet(); toast(items.length === 1 ? 'Gespeichert' : items.length + ' Lebensmittel gespeichert'); render();
+});
 function offMap(p){
   const n = p.nutriments || {};
   let kcal = num(n['energy-kcal_100g']); if (!kcal && n.energy_100g) kcal = num(n.energy_100g) / 4.184;
@@ -994,9 +1214,11 @@ function offMap(p){
 const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,serving_quantity';
 async function doSearch(){
   const term = $('#pq').value.trim(); if (!term) return;
+  P.q = term;
   const t = term.toLowerCase();
   const local = (P.lib || []).filter(f => f.name.toLowerCase().includes(t));
-  showResults(local, 'Suche bei Open Food Facts …');
+  showResults(local, navigator.onLine ? 'Suche bei Open Food Facts …' : 'Offline: nur eigene und zuletzt verwendete Lebensmittel.');
+  if (!navigator.onLine) return;
   try {
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=25&cc=de&lc=de&fields=${OFF_FIELDS}`;
     const res = await fetch(url); if (!res.ok) throw new Error('Status ' + res.status);
@@ -1006,40 +1228,20 @@ async function doSearch(){
     showResults(local, 'Open Food Facts ist gerade nicht erreichbar. Unten deine eigenen Treffer.');
   }
 }
-function drawAmount(food){
-  P.food = food;
-  const back = `<button class="btn sm ghost" onclick="drawPicker()">Zurück</button>`;
-  const def = food.serving || 100;
-  openSheet(`<div class="sh-head"><h3>${esc(food.name)}</h3>${back}</div>
-    <p class="small muted" style="margin-top:0">${food.brand ? esc(food.brand) + '. ' : ''}Pro 100 g: ${fmt(food.per.kcal)} kcal, P ${fmt1(food.per.p)} g, KH ${fmt1(food.per.c)} g, F ${fmt1(food.per.f)} g</p>
-    <label class="f"><span>Menge in g</span><input id="ag" inputmode="decimal" value="${r0(def)}" oninput="amountPreview()"></label>
-    <div class="quick">${[50,100,150,200,250].map(g => `<button class="btn sm ghost" onclick="$('#ag').value=${g};amountPreview()">${g}</button>`).join('')}</div>
-    <div class="card" id="aprev"></div>
-    <div class="btns"><button class="btn full" onclick="confirmFood()">${P.mode === 'log' ? 'Hinzufügen' : 'Als Zutat hinzufügen'}</button></div>`);
-  amountPreview();
-}
-function amountPreview(){ const v = scale(P.food.per, num($('#ag').value));
-  $('#aprev').innerHTML = `<b class="num" style="font-size:30px">${fmt(v.kcal)} kcal</b><div class="small muted">Protein ${fmt1(v.p)} g, Kohlenhydrate ${fmt1(v.c)} g, Fett ${fmt1(v.f)} g</div>`; }
-const confirmFood = run(async () => {
-  const g = num($('#ag').value); if (!g) return toast('Bitte eine Menge eingeben');
-  await useItem({ name: P.food.name, grams: g, per: P.food.per });
-});
-async function useItem(item){
-  if (P.mode === 'recipe'){ R.items.push(item); drawRecipe(); return; }
-  await add('log', S.day, { slot: P.slot, name: item.name, grams: item.grams, per: item.per, ...roundN(scale(item.per, item.grams)) });
-  closeSheet(); toast('Hinzugefügt'); render();
-}
 const saveOwnFood = run(async () => {
   const name = $('#en').value.trim(); const per = { kcal: num($('#ek').value), p: num($('#ep').value), c: num($('#ec').value), f: num($('#ef').value) };
   if (!name || !per.kcal) return toast('Name und kcal sind nötig');
-  if ($('#esave').checked) await add('food', null, { name, per, barcode: P.prefillCode || null });
-  await useItem({ name, grams: num($('#eg').value) || 100, per });
+  if ($('#esave').checked){ await add('food', null, { name, per, barcode: P.prefillCode || null }); P.lib = null; }
+  basketAdd({ name, per, serving: num($('#eg').value) || 100 });
+  P.prefillName = ''; P.prefillCode = null; P.tab = 'suche'; drawPicker();
+  if (!P.lib) loadLib().then(l => { P.lib = l; });
 });
 const saveQuick = run(async () => {
   const name = $('#qn').value.trim() || 'Schnelleintrag';
   const v = { kcal: num($('#qk').value), p: num($('#qp').value), c: num($('#qc').value), f: num($('#qf').value) };
   if (!v.kcal) return toast('Bitte kcal eingeben');
   await add('log', S.day, { slot: P.slot, name, ...roundN(v) });
+  if (P.basket.length){ toast('Schnelleintrag gespeichert. Der Korb ist noch offen.'); drawBasket(); return; }
   closeSheet(); toast('Hinzugefügt'); render();
 });
 function drawRecipeAmount(id){
@@ -1056,20 +1258,20 @@ function rPrev(id){ const t = recipeTotals(S.rc[id], num($('#rf').value));
 const logRecipe = run(async id => {
   const r = S.rc[id], f = num($('#rf').value) || 1;
   await add('log', S.day, { slot: P.slot, name: r.data.name, recipe_id: r.user_id === S.user.id ? id : null, factor: f, ...roundN(recipeTotals(r, f)) });
+  if (P.basket.length){ toast('Vorlage gespeichert. Der Korb ist noch offen.'); drawBasket(); return; }
   closeSheet(); toast('Hinzugefügt'); render();
 });
 
-/* ---------- Barcode-Scanner ---------- */
-let scanner = null, scanBusy = false;
+/* ---------- Barcode-Scanner (Dauerbetrieb) ---------- */
+let scanner = null, lastCode = { c: '', t: 0 };
 async function startScan(){
   const box = $('#reader');
   if (!window.Html5Qrcode){ box.outerHTML = '<div class="note">Der Scanner konnte nicht geladen werden. Tippe die Nummer unten ein.</div>'; return; }
   try {
     const F = Html5QrcodeSupportedFormats;
     scanner = new Html5Qrcode('reader', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E], verbose: false });
-    scanBusy = false;
     await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 130 } },
-      code => { if (scanBusy) return; scanBusy = true; stopScan().then(() => lookupCode(code)); }, () => {});
+      code => { const now = Date.now(); if (code === lastCode.c && now - lastCode.t < 4000) return; lastCode = { c: code, t: now }; lookupCode(code); }, () => {});
   } catch (e) {
     scanner = null;
     box.outerHTML = `<div class="note">Die Kamera ist nicht verfügbar. Erlaube den Kamerazugriff für diese Seite (iPhone: Einstellungen, Safari, Kamera) oder tippe die Nummer unten ein.</div>`;
@@ -1081,14 +1283,17 @@ async function lookupCode(code){
   const msg = $('#scanmsg'); if (msg) msg.innerHTML = `<p class="muted">Suche ${esc(code)} …</p>`;
   const lib = P.lib || await loadLib();
   const ownHit = lib.find(f => f.barcode === code);
-  if (ownHit) return drawAmount(ownHit);
+  const done = f => { basketAdd(f); if ($('#scanmsg')) $('#scanmsg').innerHTML = `<p class="small" style="font-weight:700">✓ ${esc(f.name)} im Korb. Nächstes Produkt scannen oder unten speichern.</p>`; if (navigator.vibrate) navigator.vibrate(60); };
+  if (ownHit) return done(ownHit);
+  if (!navigator.onLine){ if ($('#scanmsg')) $('#scanmsg').innerHTML = '<p class="err">Offline: Unbekannte Barcodes können erst mit Empfang nachgeschlagen werden.</p>'; return; }
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`);
     const js = await res.json();
     const food = js.status === 1 ? offMap({ ...js.product, code }) : null;
-    if (food) return drawAmount(food);
+    if (food) return done(food);
+    await stopScan();
     P.tab = 'eigen'; P.prefillCode = code; P.prefillName = js.product?.product_name || '';
-    drawPicker(); toast('Produkt ohne Nährwerte gefunden. Bitte von der Verpackung eintragen.');
+    drawPicker(); toast('Produkt ohne Nährwerte. Bitte von der Verpackung eintragen.');
   } catch (e) {
     if ($('#scanmsg')) $('#scanmsg').innerHTML = '<p class="err">Open Food Facts ist gerade nicht erreichbar.</p>';
   }
@@ -1132,6 +1337,8 @@ async function rTraining(){
   S.rt = {}; routines.forEach(r => S.rt[r.id] = r);
   if (mine){ const seen = new Set(); S.exNames = []; [...routines.flatMap(r => r.data.exercises.map(e => e.name)), ...wos.slice().reverse().flatMap(w => w.data.exercises.map(e => e.name))].forEach(n => { const k = n.toLowerCase(); if (!seen.has(k)){ seen.add(k); S.exNames.push(n); } }); }
   let h = '';
+  const dr = mine ? getDraft() : null;
+  if (dr && !sheetOpen()) h += `<div class="draft"><div><b>Nicht gespeicherte Einheit</b><div class="small">${esc(dr.w.name)}, ${dayLabel(dr.w.day)}, ${(n => n === 1 ? '1 Satz' : n + ' Sätze')(dr.w.exercises.reduce((a, e) => a + e.sets.filter(s => num(s.reps)).length, 0))} eingetragen</div></div><div class="btns" style="margin-top:10px"><button class="btn" style="flex:1" onclick="resumeDraft()">Fortsetzen</button><button class="btn line" onclick="dropDraft()">Verwerfen</button></div></div>`;
   if (mine){
     h += `<div class="sec-h"><h2>Trainingstage</h2><button class="btn sm" onclick="openRoutine()">Neuer Trainingstag</button></div>`;
     h += routines.length ? '<div class="list">' + routines.map(r => `<div class="row"><div class="grow tap" onclick="openRoutine('${r.id}')"><div class="t">${esc(r.data.name)}</div><div class="s">${r.data.exercises.length} Übungen, bearbeiten</div></div><button class="btn sm accent" onclick="startWorkout('${r.id}')">Starten</button></div>`).join('') + '</div>'
@@ -1307,7 +1514,7 @@ const editWorkout = run(async id => {
 function drawWorkout(){
   const lastTxt = n => { const l = W.last[n.toLowerCase()]; return l ? `Zuletzt ${shortDate(l.day)}: ${l.sets.filter(s => num(s.reps)).map(s => `${fmt1(num(s.kg)).replace(',0', '')}×${s.reps}`).join(', ')}` : ''; };
   const lastSet = (n, j) => { const l = W.last[n.toLowerCase()]; return l ? (l.sets[j] || l.sets.at(-1)) : null; };
-  openSheet(`<div class="sh-head"><h3>${W.id ? 'Einheit bearbeiten' : 'Training, ' + dayLabel(W.day)}</h3><button class="btn sm ghost" onclick="if(confirm('Ohne Speichern schließen?'))closeSheet()">Schließen</button></div>
+  openSheet(`<div class="sh-head"><h3>${W.id ? 'Einheit bearbeiten' : 'Training, ' + dayLabel(W.day)}</h3><button class="btn sm ghost" onclick="if(confirm('Ohne Speichern schließen? Die Einheit wird verworfen.')){clearDraft();closeSheet()}">Schließen</button></div><div oninput="saveDraft()">
     <label class="f"><span>Bezeichnung</span><input value="${esc(W.name)}" oninput="W.name=this.value"></label>
     ${W.exercises.map((e, i) => `<div class="ex">
       <div class="ex-h"><input value="${esc(e.name)}" placeholder="Übung" oninput="W.exercises[${i}].name=this.value"><button class="iconbtn" aria-label="Übung entfernen" onclick="W.exercises.splice(${i},1);drawWorkout()">×</button></div>
@@ -1322,8 +1529,8 @@ function drawWorkout(){
     <div class="btns" style="margin-top:0"><button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from===x.to?String(x.from):x.from+'-'+x.to,sets:Array.from({length:x.sets},()=>({kg:'',reps:''}))}),back:drawWorkout})">+ Übung hinzufügen</button></div>
     <label class="f" style="margin-top:14px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     <div class="btns"><button class="btn accent" style="flex:1" onclick="saveWorkout()">Einheit speichern</button>${W.id ? `<button class="btn danger" onclick="deleteWorkout()">Löschen</button>` : ''}</div>
-    <div id="restbar" class="restbar"></div>`);
-  tickRest();
+    </div><div id="restbar" class="restbar"></div>`);
+  tickRest(); saveDraft();
 }
 function copyLast(i, j){ const e = W.exercises[i]; const l = W.last[e.name.toLowerCase()]; const s = l && (l.sets[j] || l.sets.at(-1)); if (s){ e.sets[j] = { kg: s.kg, reps: s.reps }; startRest(); drawWorkout(); } }
 function addSet(i){ const s = W.exercises[i].sets; const prev = s.at(-1) || { kg:'', reps:'' }; s.push({ kg: prev.kg, reps: prev.reps }); drawWorkout(); }
@@ -1333,9 +1540,14 @@ const saveWorkout = run(async () => {
   if (!exercises.length) return toast('Trag mindestens einen Satz mit Wiederholungen ein');
   const data = { name: W.name.trim() || 'Training', routine_id: W.routine_id || null, exercises, note: (W.note || '').trim() };
   if (W.id) await upd(W.id, data); else await add('workout', W.day, data);
-  stopRest(); closeSheet(); toast('Einheit gespeichert'); render();
+  stopRest(); clearDraft(); closeSheet(); toast(navigator.onLine ? 'Einheit gespeichert' : 'Offline gespeichert, wird später hochgeladen'); render();
 });
-const deleteWorkout = run(async () => { if (!confirm('Einheit löschen?')) return; await del(W.id); closeSheet(); render(); });
+const deleteWorkout = run(async () => { if (!confirm('Einheit löschen?')) return; await del(W.id); clearDraft(); closeSheet(); render(); });
+function saveDraft(){ if (!W) return; const { last, ...rest } = W; LSS('spotter:wo-draft', { w: rest, at: Date.now(), uid: S.user.id }); }
+function clearDraft(){ try { localStorage.removeItem('spotter:wo-draft'); } catch (e) {} }
+const getDraft = () => { const d = LSJ('spotter:wo-draft', null); return d && d.uid === S.user?.id ? d : null; };
+const resumeDraft = run(async () => { const d = getDraft(); if (!d) return; unlockAudio(); W = { ...d.w, last: await lastMap(d.w.id) }; drawWorkout(); });
+function dropDraft(){ if (confirm('Nicht gespeicherte Einheit verwerfen?')){ clearDraft(); render(); } }
 
 /* ================= Körper ================= */
 const MEAS = [['taille','Taille'],['huefte','Hüfte'],['brust','Brust'],['arm','Oberarm'],['bein','Oberschenkel']];
@@ -1453,8 +1665,9 @@ async function rProfil(){
     <div class="searchrow"><input id="pcode" placeholder="Code des Partners" autocapitalize="characters"><button class="btn" onclick="linkPartner()">Verknüpfen</button></div>`;
   h += `</div></div><div class="sec"><h2>Sicherheit</h2><div class="card">
     <label class="f"><span>Automatisch abmelden nach Inaktivität (nur dieses Gerät)</span><select onchange="setLS('autoLogoutDays',this.value);toast('Gespeichert')">${[['0','Nie'],['7','Nach 7 Tagen'],['14','Nach 14 Tagen'],['30','Nach 30 Tagen']].map(([v, l]) => `<option value="${v}" ${getLS('autoLogoutDays', '0') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-    <div class="btns" style="margin-top:0"><button class="btn line" style="flex:1" onclick="sb.auth.signOut()">Abmelden</button><button class="btn danger" style="flex:1" onclick="logoutAll()">Auf allen Geräten abmelden</button></div>
-    <p class="small muted" style="margin-bottom:0">Angemeldet als ${esc(S.user.email)}</p></div></div>
+    <div class="btns" style="margin-top:0"><button class="btn line" style="flex:1" onclick="doLogout()">Abmelden</button><button class="btn danger" style="flex:1" onclick="logoutAll()">Auf allen Geräten abmelden</button></div>
+    <button class="btn ghost full" style="margin-top:10px" onclick="exportData()">Meine Daten exportieren</button>
+    <p class="small muted" style="margin-bottom:0">Der Export enthält alle deine Einträge und Einstellungen als Datei. Angemeldet als ${esc(S.user.email || '')}</p></div></div>
     <div class="sec" style="text-align:center"><button class="btn sm ghost" onclick="openChangelog()">Was ist neu in Spotter ${APP_VERSION}?</button></div>`;
   return h;
 }
@@ -1565,21 +1778,26 @@ async function doLogin(){
   S.user = res.data.session.user; boot();
 }
 async function boot(){
+  if (S.user) LSS('spotter:user', { id: S.user.id, email: S.user.email, user_metadata: S.user.user_metadata || {} });
   try { await loadProfiles(); } catch (e) { showAuth('Profil konnte nicht geladen werden: ' + (e.message || e)); return; }
   applyTheme(S.me.data?.theme || 'auto');
   touchActive();
   await loadAvatars();
   document.body.classList.add('in'); render();
   setTimeout(maybeChangelog, 600);
+  netUI(); syncQueue();
 }
 async function init(){
-  if (!window.supabase || !cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes('DEIN-PROJEKT')){
+  if (!window.supabase){ $('#view').innerHTML = '<div class="auth"><h1>Ladefehler</h1><p>Eine Programmbibliothek konnte nicht geladen werden. Prüfe die Internetverbindung und lade die Seite neu. Tritt das dauerhaft auf, wurde die Bibliothek möglicherweise verändert und aus Sicherheitsgründen blockiert.</p></div>'; return; }
+  if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes('DEIN-PROJEKT')){
     $('#view').innerHTML = '<div class="auth"><h1>Fast fertig</h1><p>Trag in der Datei <b>config.js</b> die Supabase-Adresse und den Schlüssel ein. Die Anleitung erklärt, wo du beides findest.</p></div>';
     return;
   }
   sb = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
-  sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT'){ S.user = null; S.me = null; S.partner = null; S.myGame = null; Object.keys(GC).forEach(k => delete GC[k]); $('#lvl').classList.add('empty'); showAuth(); } });
-  const { data: { session } } = await sb.auth.getSession();
+  sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT'){ try { ['spotter:user','spotter:profiles','spotter:qc','spotter:wo-draft','spotter:queue'].forEach(k => localStorage.removeItem(k)); } catch (e) {} QUEUE = []; S.user = null; S.me = null; S.partner = null; S.myGame = null; Object.keys(GC).forEach(k => delete GC[k]); $('#lvl').classList.add('empty'); showAuth(); } });
+  let session = null;
+  try { session = (await sb.auth.getSession()).data.session; } catch (e) {}
+  if (!session && !navigator.onLine){ const u = LSJ('spotter:user', null); if (u){ S.user = u; S.offline = true; boot(); return; } }
   if (session && inactiveTooLong()){ await sb.auth.signOut(); setLS('lastActive', '0'); showAuth('Du wurdest nach längerer Inaktivität automatisch abgemeldet.'); return; }
   if (session){ S.user = session.user; boot(); } else showAuth();
 }
