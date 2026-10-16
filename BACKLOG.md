@@ -1,14 +1,8 @@
 # Backlog Spotter
 
-Aktuelle Version: **1.5.1**
+Aktuelle Version: **1.5.2**
 
-## Hotfix 1.5.2 (als Nächstes)
-Der Rauchtest bildet beide Fehler bereits nach und schlägt aktuell mit genau diesen Meldungen fehl: „Datum Gestern ohne undefined (Safari-Format)“, „Speichern-Knopf nicht vom Timer verdeckt“ und der daraus folgende Abbruch im Trainingsablauf. Nach dem Hotfix müssen alle Tests grün sein.
-
-- [ ] **Bug: „Gestern, undefined“** in der Kopfzeile. Ursache: `longDay()` zerlegt die Ausgabe von `toLocaleDateString` per `split(', ')`, Safari liefert kein Komma. Lösung: Wochentag, Tag und Monat einzeln formatieren und selbst zusammensetzen.
-- [ ] **Bug: Pausentimer verdeckt „Einheit speichern“** im Trainings-Sheet. Lösung: Timer und Speichern-Knopf in eine gemeinsame feste Leiste am unteren Rand des Sheets, Speichern immer erreichbar.
-
-## Version 1.6 (nach Rücksprache umsetzen)
+## Version 1.6 (als Nächstes, nach Rücksprache umsetzen)
 - [ ] **Satz abhaken:** Sätze mit Werten vom letzten Mal vorausgefüllt, ✓ bestätigt (startet Timer bei Auto-Timer), abgehakte Sätze markiert, erledigte Übungen klappen zu, Sprung zur nächsten offenen Übung.
 - [ ] **Aufwärmsätze:** eigener Bereich „+ Aufwärmsatz“ über den Arbeitssätzen, grau beschriftet. Zählen nicht für Volumen, Bestwerte, XP.
 - [ ] **Steigerungshinweis:** Wurde beim schwersten Satz das obere Wiederholungsziel erreicht, beim nächsten Mal mehr Gewicht vorschlagen (doppelte Progression, z. B. +2,5 kg).
@@ -37,4 +31,4 @@ Der Rauchtest bildet beide Fehler bereits nach und schlägt aktuell mit genau di
 - Automatisches Abmelden als Standard (nur optional vorhanden)
 
 ## Erledigt
-1.0 Grundversion · 1.1 Design B, Hell/Dunkel, Level-System · 1.2 Name Spotter, Logo, Trainingstag-Editor mit Bibliothek · 1.4 Pausentimer, Kopieren, Kudos, Profilfoto, Freigaben, Sicherheit, Übungsfortschritt, Wochenrückblick, Changelog · 1.5 Offline-Modus, Trainingsentwurf, Sammelkorb, Dauer-Scan, Kopieren mit Ziel, Einträge bearbeiten, Export, SRI · 1.5.1 Mahlzeiten an Partner schicken, Auto-Timer abschaltbar
+1.0 Grundversion · 1.1 Design B, Hell/Dunkel, Level-System · 1.2 Name Spotter, Logo, Trainingstag-Editor mit Bibliothek · 1.4 Pausentimer, Kopieren, Kudos, Profilfoto, Freigaben, Sicherheit, Übungsfortschritt, Wochenrückblick, Changelog · 1.5 Offline-Modus, Trainingsentwurf, Sammelkorb, Dauer-Scan, Kopieren mit Ziel, Einträge bearbeiten, Export, SRI · 1.5.1 Mahlzeiten an Partner schicken, Auto-Timer abschaltbar · 1.5.2 Datum „Gestern“ in Safari, Pausentimer und Speichern in gemeinsamer Leiste

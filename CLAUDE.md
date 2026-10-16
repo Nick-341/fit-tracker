@@ -48,4 +48,5 @@ Externe Bibliotheken (per `<script>` mit SRI-Prüfsumme, exakt gepinnt): `@supab
 - Nach Updates muss die App einmal online geöffnet werden, damit der Service Worker die neue Version lädt.
 
 ## Auslieferung
-GitHub Pages aus `main` (Root). Ein Push auf `main` veröffentlicht. `config.js` enthält die echten Werte und bleibt unverändert. Ablauf für Versionen im Skill `release`.
+GitHub Pages aus `main` (Root). Ein Push auf `main` veröffentlicht.
+**Claude pusht nie selbst** (kein `git push`, auch nicht nach Zustimmung). Der Nutzer pusht über GitHub Desktop. Claude committet und taggt lokal und sagt am Ende, wann gepusht werden soll (bei SQL-Updates erst nach Ausführung des SQL) und was danach auf dem iPhone zu prüfen ist. `config.js` enthält die echten Werte und bleibt unverändert. Ablauf für Versionen im Skill `release`.

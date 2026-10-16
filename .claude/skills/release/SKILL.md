@@ -18,12 +18,12 @@ Versionsschema: `MAJOR.MINOR.PATCH`. Hotfix (nur Fehler) → PATCH, neue Funktio
 6. **SQL nötig?** Wenn ja (Skill `datenbank`): `update-N.sql` vorhanden und `schema.sql` ergänzt. Im Release-Hinweis an den Nutzer **fett** vermerken, dass die SQL-Datei *vor* dem Push im Supabase SQL Editor ausgeführt werden muss.
 7. **Anleitung:** in `ANLEITUNG.md` einen Absatz „**Neu in x.y.z**:“ über dem vorherigen ergänzen.
 8. **Backlog:** erledigte Punkte in `BACKLOG.md` unter „Erledigt“ eintragen, „Aktuelle Version“ anpassen.
-9. **Commit und Tag:** `git add -A && git commit -m "Spotter x.y.z: <Kurzbeschreibung>" && git tag vx.y.z`. Pushen erst, wenn der Nutzer zustimmt (bei SQL-Updates erst nach seiner Bestätigung, dass das SQL ausgeführt ist): `git push && git push --tags`.
+9. **Commit und Tag:** `git add -A && git commit -m "Spotter x.y.z: <Kurzbeschreibung>" && git tag vx.y.z`. **Nie selbst pushen.** Der Nutzer pusht über GitHub Desktop (Commit und Tag; Tags dort ggf. mit „Push tags“ bzw. beim nächsten Push mitnehmen).
 
 ## Niemals
 - `config.js` ändern oder echte Schlüssel in andere Dateien kopieren.
 - Den Service-Worker-Cache vergessen.
-- Ein SQL-Update pushen, bevor der Nutzer es ausgeführt hat.
+- Selbst pushen (`git push`), egal in welcher Situation.
 
 ## Abschlussnachricht an den Nutzer
-Kurz: Was ist neu (in Nutzersprache), ob ein SQL-Schritt nötig ist, Hinweis „App einmal online öffnen“. Bei Logo- oder Namensänderung: Verknüpfung auf dem Home-Bildschirm neu anlegen.
+Kurz: Was ist neu (in Nutzersprache), ob ein SQL-Schritt nötig ist, **wann der Nutzer über GitHub Desktop pushen soll** (bei SQL erst danach), was er danach konkret auf dem iPhone prüfen soll, Hinweis „App einmal online öffnen“. Bei Logo- oder Namensänderung: Verknüpfung auf dem Home-Bildschirm neu anlegen.

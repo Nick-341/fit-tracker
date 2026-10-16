@@ -242,7 +242,9 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .kudos.on svg{color:var(--on-accent)}
 .kudosin{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:16px;padding:10px 14px;margin-top:12px;font-size:14px}
 .kudosin svg{color:var(--accent);flex:none}
-.restbar{position:sticky;bottom:0;margin:14px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));background:var(--surface);display:flex;align-items:center;gap:8px;box-shadow:0 -8px 24px rgba(0,0,0,.18);min-height:64px}
+.wbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:14px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:var(--surface);display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+.wrow{display:flex;align-items:center;gap:12px}
+.restbar{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 8px;margin:0 -8px;border-radius:14px}
 .restbar.done{background:var(--accent);color:var(--on-accent)}
 .restbar.done .btn{background:var(--on-accent);color:var(--accent)}
 .switch{appearance:none;-webkit-appearance:none;width:52px;height:32px;min-height:0;padding:0;border-radius:16px;background:var(--soft);border:0;position:relative;flex:none;cursor:pointer;transition:background .15s}
@@ -328,10 +330,16 @@ const WD = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 const SLOTS = [['fruehstueck','Frühstück'],['mittag','Mittagessen'],['abend','Abendessen'],['snack','Snacks']];
 const slotName = k => (SLOTS.find(s => s[0] === k) || [0,'Sonstiges'])[1];
 const shortDate = s => new Date(s + 'T12:00:00').toLocaleDateString('de-DE', {day:'numeric', month:'numeric'});
+// Selbst zusammensetzen: Safari und Chrome formatieren toLocaleDateString unterschiedlich (Kommas, Punkte).
+const MON = ['Jan.','Feb.','März','Apr.','Mai','Juni','Juli','Aug.','Sept.','Okt.','Nov.','Dez.'];
+function dateParts(s){
+  const d = new Date(s + 'T12:00:00');
+  return { wd: WD[wd(s)] + '.', dm: d.getDate() + '. ' + MON[d.getMonth()] };
+}
 function dayLabel(s){
   if (s === today()) return 'Heute';
   if (s === addDays(today(), -1)) return 'Gestern';
-  return new Date(s + 'T12:00:00').toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short'});
+  const p = dateParts(s); return p.wd + ', ' + p.dm;
 }
 let toastT;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
@@ -583,8 +591,8 @@ function renderHeader(){
   if (S.myGame) updateLvl(S.myGame);
 }
 function longDay(s){
-  const d = new Date(s + 'T12:00:00').toLocaleDateString('de-DE', { weekday:'short', day:'numeric', month:'short' });
-  return s === addDays(today(), -1) ? 'Gestern, ' + d.split(', ')[1] : d;
+  const p = dateParts(s);
+  return (s === addDays(today(), -1) ? 'Gestern' : p.wd) + ', ' + p.dm;
 }
 let RT = 0;
 async function render(){
@@ -828,11 +836,9 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 const CHANGELOG = [
-  ['Mahlzeiten schicken', 'Gemeinsam gegessen? Schicke eine Mahlzeit an deinen Partner: über „An …“ neben der Mahlzeit, beim Antippen eines Eintrags oder direkt im Korb.'],
-  ['Mit einem Tipp übernehmen', 'Geschickte Mahlzeiten erscheinen unter Heute und Essen. Portion anpassen, einzelne Lebensmittel abwählen, übernehmen.'],
-  ['Pausentimer nach Bedarf', 'Der automatische Start lässt sich direkt im Training oder unter Profil abschalten. Manuell starten geht weiterhin.']
+  ['Fehlerbehebungen', 'Die Kopfzeile zeigt bei „Gestern“ wieder das richtige Datum. Im Training sitzen Pausentimer und „Einheit speichern“ jetzt gemeinsam in einer Leiste am unteren Rand, Speichern ist immer erreichbar.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
@@ -927,13 +933,15 @@ function tickRest(){
   const el = $('#restbar'); const left = Math.ceil((TM.end - Date.now()) / 1000);
   if (TM.end && left <= 0){ TM.end = 0; clearInterval(TM.iv); TM.iv = null; if (!document.hidden) beep(); if (el){ el.classList.add('done'); el.innerHTML = `<b class="num" style="font-size:24px">Weiter geht's</b><span style="flex:1"></span><button class="btn sm" onclick="this.closest('#restbar').classList.remove('done');tickRest()">OK</button>`; } return; }
   if (!el) return;
-  if (!TM.end){ el.classList.remove('done'); el.innerHTML = `<label class="autot"><input type="checkbox" class="switch" ${restAuto() ? 'checked' : ''} onchange="setRestAuto(this.checked)" aria-label="Pausentimer automatisch starten"><span class="small" style="font-weight:700">Auto-Timer${restAuto() ? '' : ' aus'}</span></label><span style="flex:1"></span><button class="btn sm ghost" onclick="startRest()">Pause ${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)} starten</button>`; return; }
+  if (!TM.end){ el.classList.remove('done'); el.innerHTML = `<span class="small muted" style="font-weight:700">Pausentimer</span><span style="flex:1"></span><button class="btn sm ghost" onclick="startRest()">Pause ${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)} starten</button>`; return; }
   const pct = Math.max(0, Math.min(100, left / TM.dur * 100));
   el.classList.remove('done');
   el.innerHTML = `<b class="num" style="font-size:28px;min-width:64px">${Math.floor(left / 60)}:${z(left % 60)}</b>
     <div style="flex:1"><div class="track c" style="--c:var(--accent);height:6px;margin:0"><i style="width:${pct}%"></i></div></div>
     <button class="btn sm ghost" onclick="adjRest(-15)" aria-label="15 Sekunden weniger">−15</button><button class="btn sm ghost" onclick="adjRest(15)" aria-label="15 Sekunden mehr">+15</button><button class="iconbtn" onclick="stopRest()" aria-label="Pause beenden">×</button>`;
 }
+const autotHtml = () => `<label class="autot"><input type="checkbox" class="switch" ${restAuto() ? 'checked' : ''} onchange="setRestAuto(this.checked)" aria-label="Pausentimer automatisch starten"><span class="small" style="font-weight:700">Auto-Timer${restAuto() ? '' : ' aus'}</span></label>`;
+function drawAutot(){ const el = $('#autot'); if (el) el.innerHTML = autotHtml(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tickRest(); });
 
 /* ================= Essen kopieren ================= */
@@ -1094,7 +1102,7 @@ const exportData = run(async () => {
 /* ================= Mahlzeiten an den Partner schicken ================= */
 const restAuto = () => S.me?.data?.restAuto !== false;
 function autoRest(){ if (restAuto()) startRest(); }
-const setRestAuto = run(async v => { await saveProfile({ restAuto: v }); toast(v ? 'Pausentimer startet automatisch' : 'Pausentimer startet nur manuell'); tickRest(); });
+const setRestAuto = run(async v => { await saveProfile({ restAuto: v }); toast(v ? 'Pausentimer startet automatisch' : 'Pausentimer startet nur manuell'); drawAutot(); tickRest(); });
 const mealShareText = items => { const t = items.reduce((a, d) => addN(a, d), ZERO); return `${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}, ${fmt(t.kcal)} kcal`; };
 const sendMeal = run(async (items, slot, day) => {
   if (!S.partner) return toast('Kein Partner verknüpft');
@@ -1588,8 +1596,8 @@ function drawWorkout(){
       <button class="btn sm ghost" onclick="addSet(${i})">+ Satz</button></div>`).join('')}
     <div class="btns" style="margin-top:0"><button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from===x.to?String(x.from):x.from+'-'+x.to,sets:Array.from({length:x.sets},()=>({kg:'',reps:''}))}),back:drawWorkout})">+ Übung hinzufügen</button></div>
     <label class="f" style="margin-top:14px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
-    <div class="btns"><button class="btn accent" style="flex:1" onclick="saveWorkout()">Einheit speichern</button>${W.id ? `<button class="btn danger" onclick="deleteWorkout()">Löschen</button>` : ''}</div>
-    </div><div id="restbar" class="restbar"></div>`);
+    ${W.id ? `<div class="btns"><button class="btn danger" onclick="deleteWorkout()">Einheit löschen</button></div>` : ''}
+    </div><div class="wbar"><div id="restbar" class="restbar"></div><div class="wrow"><span id="autot">${autotHtml()}</span><button class="btn accent" style="flex:1" onclick="saveWorkout()">Einheit speichern</button></div></div>`);
   tickRest(); saveDraft();
 }
 function copyLast(i, j){ const e = W.exercises[i]; const l = W.last[e.name.toLowerCase()]; const s = l && (l.sets[j] || l.sets.at(-1)); if (s){ e.sets[j] = { kg: s.kg, reps: s.reps }; autoRest(); drawWorkout(); } }

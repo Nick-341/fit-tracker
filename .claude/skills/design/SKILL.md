@@ -36,7 +36,7 @@ Archivo (variabel). Überschriften: `font-weight:900; font-stretch:112%`. Große
 - Buttons: `.btn` (primär), `.btn.accent` (Hauptaktion, höchstens eine pro Ansicht), `.btn.ghost`, `.btn.line`, `.btn.danger`, `.btn.sm`, `.iconbtn`, `.plus`, `.dashed`
 - Eingaben: `.f` (Label über Feld), `.grid2`, `.grid4`, `.chips`/`.chip`, `.seg`, `.switch`, `.stepper`
 - Sheets: `openSheet(html)` / `closeSheet()`, Kopf `.sh-head` mit Titel und „Schließen“ bzw. „Zurück“
-- Feste Leisten am Sheet-Ende: `.restbar`, `.bbar` (sticky bottom). Inhalte darunter dürfen nie verdeckt werden; Hauptaktionen gehören in die Leiste selbst.
+- Feste Leisten am Sheet-Ende: `.wbar` (Training: Pausentimer `#restbar` + Auto-Timer + „Einheit speichern“), `.bbar` (Korb), beide sticky bottom. Inhalte darunter dürfen nie verdeckt werden; Hauptaktionen gehören in die Leiste selbst.
 - Rückmeldung: `toast('…')`
 
 ## Regeln
