@@ -115,32 +115,18 @@ button.row{width:100%;border:0;border-bottom:1px solid var(--line);background:no
 button.row:last-child{border-bottom:0}
 .hintbar .hrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .hintbar .sharein .grow{flex:1 1 calc(100% - 24px)}
-.hintbar .sharein .btn{margin-left:18px}
-.hintbar .kudosin svg{color:var(--mine)}
-.hintbar .kudosin,.hintbar .sharein{background:none;color:inherit;padding:0;margin:0;border-radius:0}
-.hintbar .sharein .btn{background:var(--ink);color:var(--bg)}
-.hintbar .grow{flex:1;min-width:0}
-.hero{background:var(--surface);border-radius:24px;padding:18px;display:flex;gap:16px;align-items:center}
-.hero svg{flex:none}
-.mb{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
-.mb .l{display:flex;justify-content:space-between;font-size:13px;font-weight:700;gap:6px;white-space:nowrap}
+.hintbar .hintbar .kudosin svg{color:var(--mine);flex:none}
+.hintbar .kudosin,.hintbar .hintbar .hintbar .grow{flex:1;min-width:0}
 .track{height:8px;background:var(--soft);border-radius:4px;overflow:hidden;margin-top:4px}
 .track>i{display:block;height:100%;background:var(--ink);border-radius:4px}
 .track.over>i{background:var(--warn)}
 .track.c>i{background:var(--c)}
-.subline{font-size:13px;color:var(--muted);font-weight:600;margin:8px 4px 0}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .tile{background:var(--surface);border-radius:var(--r-card);padding:16px;border:0;text-align:left;width:100%;display:flex;flex-direction:column;color:inherit}
-.tile .k{font-size:12px;font-weight:700;color:var(--muted)}
-.tile .v{font-weight:900;font-size:21px;line-height:1.15;margin-top:4px;overflow-wrap:break-word;hyphens:auto}
 .tile .s{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
+.tile.done .s{color:var(--on-accent);opacity:.8}
 .tile.done{background:var(--accent);color:var(--on-accent)}
-.tile.done .k,.tile.done .s{color:var(--on-accent);opacity:.8}
-.prow{background:var(--surface);border-radius:20px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-top:12px;border:0;width:100%;text-align:left}
-.pl{width:42px;height:42px;border-radius:21px;border:3px solid var(--partner);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex:none}
-.pexp{margin-top:8px}
-.pexp .hero{border:2px solid var(--partner)}
-
+.pexp 
 /* Essen */
 .eboard{display:flex;gap:16px;align-items:flex-end;padding:16px 20px}
 .emac{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
@@ -175,8 +161,7 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .slotpick{position:relative;display:inline-flex;align-items:center;gap:4px;min-height:44px}
 .slotpick h3{font-size:26px}
 .slotpick select{position:absolute;inset:0;opacity:0;width:100%;min-height:0}
-.searchrow.big{gap:8px}
-.sfield{flex:1;display:flex;align-items:center;gap:8px;border:2px solid var(--ink);border-radius:var(--r-btn);background:var(--pad);padding:0 12px;min-height:52px;color:var(--muted)}
+.searchrow.sfield{flex:1;display:flex;align-items:center;gap:8px;border:2px solid var(--ink);border-radius:var(--r-btn);background:var(--pad);padding:0 12px;min-height:52px;color:var(--muted)}
 .sfield input{border:0;background:none;padding:0;min-height:48px;color:var(--ink)}
 .sfield input:focus{border:0}
 .sscan{flex:none;width:52px;height:52px;border:0;border-radius:var(--r-btn);background:var(--soft);color:var(--ink);display:flex;align-items:center;justify-content:center}
@@ -200,8 +185,7 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .bseg{background:var(--board-soft);margin:0}
 .bseg button{color:var(--board-muted)}
 .bseg button.on{background:var(--board-ink);color:var(--board)}
-.btn.big{min-height:52px;font-size:17px}
-.lhead{min-height:56px}
+.btn.lhead{min-height:56px}
 .lhead h3{font-size:20px}
 .mrow2{min-height:52px}
 .mdiff{width:48px;text-align:right;font-size:14px;color:var(--muted)}
@@ -240,9 +224,9 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
-.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
 .list{background:var(--surface);border-radius:var(--r-card);overflow:hidden}
-.row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row .grow{flex:1;min-width:0}
 .row .t{font-weight:700;overflow:hidden;text-overflow:ellipsis}
@@ -251,10 +235,7 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .row.tap{cursor:pointer}
 .row.dim .t{text-decoration:line-through;color:var(--muted)}
 .note{background:var(--surface);border-radius:var(--r-card);padding:12px 16px;color:var(--muted);font-size:15px}
-.slot-h{display:flex;justify-content:space-between;padding:10px 14px;background:var(--soft);font-weight:800;font-size:13px}
 .card{background:var(--surface);border-radius:var(--r-card);padding:16px}
-.big{font-weight:900;font-stretch:90%;font-size:52px;line-height:1;margin:2px 0}
-.big small{font-size:18px;font-weight:700;font-stretch:100%;color:var(--muted);margin-left:6px}
 
 /* Buttons & Formulare */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:var(--r-btn);padding:8px 16px;font-weight:800;background:var(--ink);color:var(--bg);min-height:44px}
@@ -266,7 +247,7 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .btn.full{width:100%}
 .btn.done{background:var(--soft);color:var(--ok)}
 .iconbtn{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:6px 8px;border-radius:8px;min-width:36px;min-height:36px}
-.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .f{display:block;margin-bottom:12px}
 .f>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px}
@@ -275,37 +256,41 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:0}
 textarea{min-height:120px;resize:vertical}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 8px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .chip{position:relative}
 .chip input{position:absolute;opacity:0;pointer-events:none}
 .chip span{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:999px;background:var(--surface);font-weight:700;font-size:14px;cursor:pointer}
-.chip input:checked+span{background:var(--accent);color:var(--on-accent)}
+.chip input:checked+span{background:var(--ink);color:var(--bg)}
 .chip input:focus-visible+span{outline:3px solid var(--accent)}
 .check{display:flex;gap:10px;align-items:center;margin-bottom:12px;font-weight:600}
 .check input{width:22px;height:22px;min-height:0;accent-color:var(--accent)}
 
 /* Rechner */
-.calc-out{background:var(--surface);border-radius:22px;padding:16px 18px;margin-top:4px}
-.calc-line{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
+.calc-out{background:var(--surface);border-radius:var(--r-card);padding:16px;margin-top:4px}
+.calc-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
 .calc-line:last-child{border-bottom:0}
 .calc-line span:first-child{color:var(--muted)}
-.tgt{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
-.tgt div{background:var(--accent);color:var(--on-accent);border-radius:16px;padding:12px 14px}
-.tgt b{font-weight:900;font-stretch:90%;font-size:32px;display:block;line-height:1.1}
-.warnbox{margin-top:10px;color:var(--warn);font-size:14px;font-weight:600}
+.tgt{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px}
+.tgt div{background:var(--board);color:var(--board-ink);border-radius:var(--r-card);padding:16px}
+.tgt div .small{color:var(--board-muted)}
+.tgt b{font-weight:900;font-stretch:90%;font-size:40px;display:block;line-height:.9;margin:8px 0}
+.warnbox{margin-top:12px;color:var(--warn);font-size:14px;font-weight:600}
 
 /* Bottom Sheet */
 .sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet.hidden{display:none}
 .sheet-bg{position:absolute;inset:0;background:rgba(8,10,12,.55)}
-.sheet-card{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:26px 26px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+.sheet-card{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:var(--r-board) var(--r-board) 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
 @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.sheet-card{animation:none}}
-.sh-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px}
+.sh-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;min-height:44px}
+.sh-head h3{font-size:26px;min-width:0;overflow-wrap:anywhere}
+.sh-head .btn.sm.ghost{background:none;color:var(--muted);font-size:16px;padding:0 4px;min-height:44px;flex:none}
+h3.sub{font-size:20px;margin-bottom:8px}
 #reader{width:100%;border-radius:16px;overflow:hidden;background:#000;min-height:220px}
 .searchrow{display:flex;gap:8px;margin-bottom:12px}
 .searchrow input{flex:1}
-.quick{display:flex;gap:6px;margin:-4px 0 12px}
+.quick{display:flex;gap:8px;margin:-4px 0 12px}
 .quick button{flex:1}
 
 /* Training */
@@ -333,39 +318,30 @@ textarea{min-height:120px;resize:vertical}
 .sbtn:disabled{opacity:.35}
 .ex .btn.ghost{margin-top:8px}
 .iconbtn.sm{min-width:32px;padding:4px}
-details.wo{background:var(--surface);border-radius:20px;margin-bottom:8px}
-details.wo summary{padding:14px 16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px}
-details.wo summary::-webkit-details-marker{display:none}
-details.wo .body{padding:0 16px 14px;font-size:15px}
-details.wo .body p{margin:4px 0}
-.pr{display:inline-block;background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
 
 /* Körper */
-.chart{background:var(--surface);border-radius:20px;padding:12px;color:var(--c,var(--mine))}
+.chart{background:var(--surface);border-radius:var(--r-card);padding:12px;color:var(--c,var(--mine))}
 .chart svg{width:100%;height:auto;display:block}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.stats div{background:var(--surface);border-radius:16px;padding:10px 12px}
-.stats b{font-weight:900;font-stretch:90%;font-size:26px;display:block;line-height:1.1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.stats div{background:var(--surface);border-radius:var(--r-btn);padding:12px}
+.stats b{font-weight:900;font-stretch:90%;font-size:28px;display:block;line-height:1;margin-bottom:4px}
 .stats span{font-size:12px;font-weight:600;color:var(--muted)}
-table.m{width:100%;border-collapse:collapse;background:var(--surface);border-radius:20px;overflow:hidden;font-size:15px}
-table.m th,table.m td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line)}
-table.m th:first-child,table.m td:first-child{text-align:left}
-table.m th{font-weight:700;color:var(--muted);font-size:13px}
 
 /* Level & Abzeichen */
-.lvlhero{background:var(--accent);color:var(--on-accent);border-radius:24px;padding:20px}
-.lvlhero .row1{display:flex;align-items:center;gap:14px}
-.lvlbox{width:64px;height:64px;border-radius:18px;background:var(--on-accent);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none}
+.lvlhero{border-radius:var(--r-board);padding:20px}
+.lvlhero .row1{display:flex;align-items:center;gap:16px}
+.lvlbox{width:64px;height:64px;border-radius:var(--r-btn);background:var(--accent);color:var(--on-accent);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none}
 .lvlbox small{font-size:11px;font-weight:700}
 .lvlbox b{font-weight:900;font-stretch:90%;font-size:30px;line-height:1}
-.lvlhero .xpbar{height:10px;background:rgba(21,24,28,.18);border-radius:5px;margin-top:8px;overflow:hidden}
-.lvlhero .xpbar i{display:block;height:100%;background:var(--on-accent);border-radius:5px}
+.lvlhero .xpbar{height:10px;background:var(--board-soft);border-radius:5px;margin-top:8px;overflow:hidden}
+.lvlhero .xpbar i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.lvlt2{font-weight:900;font-stretch:112%;font-size:24px;line-height:1.1}
 .gstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.gstats div{background:var(--surface);border-radius:16px;padding:10px 12px}
-.gstats b{font-weight:900;font-stretch:90%;font-size:26px;display:block;line-height:1.1}
+.gstats div{background:var(--surface);border-radius:var(--r-btn);padding:12px}
+.gstats b{font-weight:900;font-stretch:90%;font-size:28px;display:block;line-height:1;margin-bottom:4px}
 .gstats span{font-size:12px;font-weight:600;color:var(--muted)}
-.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.badge{background:var(--surface);border-radius:18px;padding:12px 8px;text-align:center}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.badge{background:var(--surface);border-radius:var(--r-card);padding:12px 8px;text-align:center}
 .badge .ic{width:44px;height:44px;border-radius:22px;margin:0 auto 6px;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center}
 .badge.off .ic{background:var(--soft);color:var(--muted)}
 .badge.off .bn{color:var(--muted)}
@@ -377,8 +353,8 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .chiprow::-webkit-scrollbar{display:none}
 .chiprow button{flex:none;border:0;background:var(--surface);color:var(--ink);font-weight:700;font-size:14px;border-radius:999px;min-height:38px;padding:0 14px}
 .chiprow button.on{background:var(--ink);color:var(--bg)}
-.plus{flex:none;width:38px;height:38px;border-radius:19px;border:2px solid var(--line);background:none;color:var(--ink);font-size:20px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
-.okdot{flex:none;width:30px;height:30px;border-radius:15px;background:var(--accent);color:var(--on-accent);font-weight:900;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.plus{flex:none;width:44px;height:44px;border-radius:var(--r-btn);border:0;background:var(--soft);color:var(--ink);font-size:22px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.okdot{flex:none;width:32px;height:32px;border-radius:16px;background:var(--ink);color:var(--bg);font-weight:900;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
 .okdot.guess{background:var(--soft);color:var(--muted)}
 .selpanel{position:sticky;bottom:0;margin:12px -4px 0;background:var(--surface);border-radius:22px;padding:16px;box-shadow:0 -10px 30px rgba(0,0,0,.25)}
 .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -391,7 +367,7 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .exgrid .lbl{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
 .stepper{display:flex;align-items:center;background:var(--bg);border-radius:12px;min-height:46px}
 .stepper button{border:0;background:none;color:var(--ink);width:46px;height:46px;font-size:22px;font-weight:700;border-radius:12px}
-.stepper button.plus{color:var(--mine);border:0;width:46px;height:46px}
+.stepper button.plus{flex:none;width:44px;height:44px;border-radius:var(--r-btn);border:0;background:var(--soft);color:var(--ink);font-size:22px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .stepper b{flex:1;text-align:center;font-weight:900;font-stretch:90%;font-size:22px}
 .reps{display:flex;align-items:center;gap:6px}
 .reps input{text-align:center;background:var(--bg);border:0;font-weight:900;font-size:20px;padding:8px 4px}
@@ -403,12 +379,12 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .avwrap{position:relative;flex:none;display:inline-flex}
 .avlvl{position:absolute;right:-4px;bottom:-4px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--partner);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
 .avrow{display:flex;align-items:center;gap:16px;margin-bottom:14px}
-.kudos{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);background:none;color:var(--ink);font-weight:800;font-size:14px;border-radius:999px;min-height:40px;padding:0 14px}
+.kudos{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--line);background:none;color:var(--ink);font-weight:800;font-size:14px;border-radius:var(--r-btn);min-height:44px;padding:0 16px}
 .kudos svg{color:var(--muted)}
 .kudos.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .kudos.on svg{color:var(--on-accent)}
-.kudosin{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:16px;padding:10px 14px;margin-top:12px;font-size:14px}
-.kudosin svg{color:var(--accent);flex:none}
+.kudosin{display:flex;align-items:center;gap:8px;background:var(--hint);border-radius:var(--r-btn);padding:12px 16px;margin-top:12px;font-size:14px}
+.kudosin svg{color:var(--mine);flex:none}
 .wbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:16px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);box-shadow:0 -8px 24px rgba(0,0,0,.14)}
 .wline{height:4px;margin:0 -16px 12px;background:var(--soft)}
 .wline i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
@@ -430,21 +406,14 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 /* Offline, Korb, Entwurf */
 .net-wrap{max-width:560px;margin:0 auto}
 .net-wrap:empty{display:none}
-.netbar{display:block;width:100%;margin-top:8px;border:0;border-radius:12px;padding:8px 12px;background:var(--surface);color:var(--ink);font-weight:700;font-size:13px;text-align:center}
+.netbar{display:block;width:100%;margin-top:8px;border:0;border-radius:var(--r-btn);padding:8px 12px;background:var(--surface);color:var(--ink);font-weight:700;font-size:13px;text-align:center}
 .netbar.off{background:var(--ink);color:var(--bg)}
 .bbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:16px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -8px 24px rgba(0,0,0,.14)}
 .gin{width:76px;min-height:40px;text-align:center;font-weight:800;padding:6px}
 .slotsel{width:auto;max-width:48%;min-height:40px;padding:6px 8px;font-size:14px;font-weight:700}
-.draft{background:var(--accent);color:var(--on-accent);border-radius:20px;padding:14px 16px;margin-bottom:16px}
-.draft .btn{background:var(--on-accent);color:var(--accent)}
-.draft .btn.line{background:none;border-color:var(--on-accent);color:var(--on-accent)}
 .pend{color:var(--mine);font-weight:900}
 
-.slot-r{display:flex;align-items:center;gap:10px}
-.sendbtn{border:0;background:var(--surface);color:var(--ink);font-weight:800;font-size:12px;border-radius:999px;min-height:30px;padding:0 10px}
-.sharein{background:#076A9F;color:#fff;border-radius:20px;padding:14px 16px;margin-bottom:12px}
-.sharein .btn{background:#fff;color:#15181C}
-.sharein .btn.line{background:none;border-color:#fff;color:#fff}
+.sendbtn{border:0;background:var(--surface);color:var(--ink);font-weight:800;font-size:14px;border-radius:var(--r-sm);min-height:36px;padding:0 12px}
 .autot{display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--soft);border-radius:var(--r-btn);min-height:44px;padding:0 10px;font-weight:800;font-size:14px;flex:none}
 .autot i{width:8px;height:8px;border-radius:4px;background:var(--muted)}
 .autot.on i{background:var(--accent)}
@@ -455,7 +424,8 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .auth{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 48px) 20px 40px}
 .auth h1{font-size:46px;margin:18px 0 6px}
 
-#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:800;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:var(--r-btn);font-weight:800;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+body.fixbar #toast{bottom:calc(152px + env(safe-area-inset-bottom,0px))}
 #toast.show{opacity:1}
 </style>
 </head>
@@ -1032,9 +1002,9 @@ const openGame = run(async uid => {
   if (!mine) s.today = { xp: s.todayXp || 0, parts: [] };
   const done = s.badges.filter(b => b.done).length;
   openSheet(`<div class="sh-head"><h3>${mine ? 'Dein Fortschritt' : 'Fortschritt von ' + esc(nameOf(p))}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-    <div class="lvlhero"><div class="row1"><div class="lvlbox"><small>Level</small><b>${s.level}</b></div>
-      <div style="flex:1"><div style="font-weight:900;font-stretch:112%;font-size:24px;line-height:1.1">${s.title}</div>
-      <div style="font-size:13px;font-weight:700;opacity:.85">${fmt(s.need - s.into)} XP bis Level ${s.level + 1}</div>
+    <div class="lvlhero board"><div class="row1"><div class="lvlbox"><small>Level</small><b>${s.level}</b></div>
+      <div style="flex:1"><div class="lvlt2">${s.title}</div>
+      <div class="small muted">${fmt(s.need - s.into)} XP bis Level ${s.level + 1}</div>
       <div class="xpbar"><i style="width:${(s.into / s.need * 100).toFixed(1)}%"></i></div></div></div></div>
     <div class="gstats"><div><b>${s.streak}</b><span>Tage Serie</span></div><div><b>${s.longest}</b><span>Längste Serie</span></div><div><b>${fmt(s.week)}</b><span>XP in 7 Tagen</span></div></div>
     ${mine ? `<div class="sec"><div class="sec-h"><h3>Heute</h3><span class="small muted" style="font-weight:700">+${s.today.xp} XP</span></div>
@@ -1186,7 +1156,7 @@ function drawCopy(){
     <div class="quick">${[[-1,'Gestern'],[-7,'Vor 1 Woche']].map(([d, l]) => `<button class="btn sm ghost" onclick="CP.from=addDays(S.day,${d});loadCopy()">${l}</button>`).join('')}</div>
     ${CP.loading ? '<div class="card"><span class="muted">Lädt …</span></div>' : src.length ? `<div class="f"><span>Was kommt wohin?</span></div><div class="list">${src.map(([k, l]) => { const items = CP.logs.filter(x => (x.data.slot || 'snack') === k);
       return `<div class="row"><div class="grow"><div class="t">${l}</div><div class="s">${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}, ${fmt(sum(items).kcal)} kcal</div></div><span class="muted" aria-hidden="true">→</span><select class="slotsel" aria-label="Ziel für ${l}" onchange="CP.map['${k}']=this.value;drawCopy()">${slotOpts(CP.map[k], true)}</select></div>`; }).join('')}</div>
-      <div class="card" style="margin-top:12px"><b class="num" style="font-size:28px">${fmt(t.kcal)} kcal</b><div class="small muted">${sel.length} Einträge, Protein ${fmt(t.p)} g</div></div>` : '<div class="note">An diesem Tag ist nichts eingetragen.</div>'}
+      <div class="card" style="margin-top:12px"><b class="num n36">${fmt(t.kcal)} kcal</b><div class="small muted">${sel.length} Einträge, Protein ${fmt(t.p)} g</div></div>` : '<div class="note">An diesem Tag ist nichts eingetragen.</div>'}
     <div class="btns"><button class="btn accent full" ${sel.length ? '' : 'disabled'} onclick="doCopy()">Auf ${dayLabel(S.day) === 'Heute' ? 'heute' : shortDate(S.day)} kopieren</button></div>`);
 }
 async function loadCopy(){ CP.loading = true; drawCopy(); try { CP.logs = await q('log', S.user.id, CP.from, CP.from); } catch (e) { CP.logs = []; } CP.loading = false; drawCopy(); }
@@ -1205,8 +1175,8 @@ function openEntry(id){
 function drawEntry(){
   const l = EN.l, d = l.data, canG = d.per && d.grams;
   openSheet(`<div class="sh-head"><h3>${esc(d.name)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-    <div class="card"><b class="num" style="font-size:30px" id="enk">${fmt(canG ? scale(d.per, EN.grams).kcal : d.kcal)} kcal</b><div class="small muted">Protein ${fmt1(d.p)} g, Kohlenhydrate ${fmt1(d.c)} g, Fett ${fmt1(d.f)} g</div></div>
-    ${canG ? `<div class="sec" style="margin-top:14px"><label class="f"><span>Menge in g</span><div class="searchrow" style="margin:0"><input inputmode="decimal" value="${EN.grams}" oninput="EN.grams=num(this.value);$('#enk').textContent=fmt(scale(EN.l.data.per,EN.grams).kcal)+' kcal'"><button class="btn" onclick="entryGrams()">Ändern</button></div></label></div>` : ''}
+    <div class="card"><b class="num n36" id="enk">${fmt(canG ? scale(d.per, EN.grams).kcal : d.kcal)} kcal</b><div class="small muted">Protein ${fmt1(d.p)} g, Kohlenhydrate ${fmt1(d.c)} g, Fett ${fmt1(d.f)} g</div></div>
+    ${canG ? `<div class="sec" style="margin-top:16px"><label class="f"><span>Menge in g</span><div class="searchrow" style="margin:0"><input inputmode="decimal" value="${EN.grams}" oninput="EN.grams=num(this.value);$('#enk').textContent=fmt(scale(EN.l.data.per,EN.grams).kcal)+' kcal'"><button class="btn" onclick="entryGrams()">Ändern</button></div></label></div>` : ''}
     <div class="sec"><h3 style="margin-bottom:8px">Kopieren oder verschieben</h3>
       <div class="grid2"><label class="f"><span>Tag</span><input type="date" value="${EN.day}" max="${today()}" onchange="EN.day=this.value"></label>
       <label class="f"><span>Mahlzeit</span><select onchange="EN.slot=this.value">${slotOpts(EN.slot)}</select></label></div>
@@ -1272,7 +1242,7 @@ const drawWeek = run(async () => {
   for (let i = 0; i < nDays; i++){
     const d = addDays(WR.start, i), dl = logs.filter(l => l.day === d), t = sum(dl);
     const tg = targetFor(p, d, wos.some(w => w.day === d));
-    if (t.kcal >= (tg ? tg.kcal * 0.5 : 800)){ logged++; kSum += t.kcal; if (tg){ tSum += tg.kcal; if (Math.abs(t.kcal - tg.kcal) <= tg.kcal * 0.1) inR++; } }
+    if (t.kcal >= (tg ? tg.kcal * 0.5 : 800)){ logged++; kSum += t.kcal; if (tg){ tSum += tg.kcal; if (inTarget(p, d, t.kcal, wos.some(w => w.day === d))) inR++; } }
     if (tg && t.p >= tg.p * 0.9) prot++;
   }
   const sets = wos.reduce((a, w) => a + w.data.exercises.reduce((b, e) => b + e.sets.length, 0), 0);
@@ -1293,11 +1263,11 @@ const drawWeek = run(async () => {
   const tile = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`;
   openSheet(`<div class="sh-head"><h3>Wochenrückblick</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     ${S.partner ? `<div class="seg"><button class="${WR.who === 'me' ? 'on' : ''}" onclick="WR.who='me';drawWeek()">Ich</button><button class="${WR.who === 'partner' ? 'on' : ''}" onclick="WR.who='partner';drawWeek()">${esc(nameOf(S.partner))}</button></div>` : ''}
-    <div class="sec-h"><button class="btn sm ghost" onclick="WR.start=addDays(WR.start,-7);drawWeek()" aria-label="Vorherige Woche">‹</button><b>${shortDate(WR.start)} bis ${shortDate(end)}</b><button class="btn sm ghost" ${end >= today() ? 'disabled' : ''} onclick="WR.start=addDays(WR.start,7);drawWeek()" aria-label="Nächste Woche">›</button></div>
+    <div class="sec-h"><button class="iconbtn" onclick="WR.start=addDays(WR.start,-7);drawWeek()" aria-label="Vorherige Woche"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><b>${shortDate(WR.start)} bis ${shortDate(end)}</b><button class="iconbtn" ${end >= today() ? 'disabled' : ''} onclick="WR.start=addDays(WR.start,7);drawWeek()" aria-label="Nächste Woche"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
     ${canN ? `<div class="stats">${tile(logged + '/' + nDays, 'Tage geloggt')}${tile(avgK ? fmt(avgK) : '–', avgT ? 'Ø kcal, Ziel ' + fmt(avgT) : 'Ø kcal')}${tile(inR, 'Tage im Ziel')}</div><div class="stats">${tile(prot, 'Tage Proteinziel')}` : '<div class="note" style="margin-top:10px">Ernährung wird nicht geteilt.</div><div class="stats">'}
     ${canT ? tile(wos.length, 'Trainings') + tile(fmt(vol / 1000) + ' t', sets + ' Sätze Volumen') : ''}</div>
     ${canW ? `<div class="stats">${tile(wNow ? fmt1(wNow) : '–', 'Ø Gewicht kg')}${tile(wNow && wPrev ? (wNow - wPrev >= 0 ? '+' : '−') + fmt1(Math.abs(wNow - wPrev)) : '–', 'zur Vorwoche')}<div style="background:none"></div></div>` : ''}
-    ${hints.length ? `<div class="sec"><h3 style="margin-bottom:8px">Vom Coach</h3><div class="list">${hints.map(h => `<div class="row small">${h}</div>`).join('')}</div></div>` : ''}`);
+    ${hints.length ? `<div class="sec"><div class="lbl" style="margin:0 4px 8px">Vom Coach</div><div class="hintbar">${hints.map(h => `<div>${h}</div>`).join('')}</div></div>` : ''}`);
 });
 
 const saveName = run(async v => { v = v.trim(); if (!v) return; await saveProfile({}, v); toast('Name gespeichert'); });
@@ -1346,10 +1316,6 @@ async function pendingShares(){
   const done = new Set(acks.map(a => a.data.ref));
   return shares.filter(s => s.data.to === S.user.id && !done.has(s.id));
 }
-function shareCards(list){
-  return list.map(s => `<div class="sharein"><div class="grow"><div><b>${esc(nameOf(S.partner))}</b> hat dir ${slotName(s.data.slot)} geschickt</div><div class="small" style="opacity:.8">${mealShareText(s.data.items)}${s.day !== today() ? ', ' + dayLabel(s.day) : ''}</div></div>
-    <div class="btns" style="margin-top:10px"><button class="btn" style="flex:1" onclick="openShare('${s.id}')">Übernehmen</button><button class="btn line" onclick="ackShare('${s.id}','reject')">Ablehnen</button></div></div>`).join('');
-}
 let SH = null;
 const openShare = run(async id => {
   const list = await pendingShares(); const s = list.find(x => x.id === id); if (!s) return render();
@@ -1366,7 +1332,7 @@ function drawShare(){
       return `<label class="row tap"><input type="checkbox" class="switch" ${d.use ? 'checked' : ''} onchange="SH.items[${i}].use=this.checked;drawShare()" aria-label="${esc(d.name)} übernehmen"><div class="grow"><div class="t">${esc(d.name)}</div><div class="s">${d.grams ? fmt(d.grams * SH.f) + ' g, ' : ''}P ${fmt(v.p)} / KH ${fmt(v.c)} / F ${fmt(v.f)}</div></div><div class="k">${fmt(v.kcal)}</div></label>`; }).join('')}</div>
     <div class="grid2" style="margin-top:12px"><label class="f"><span>Tag</span><input type="date" value="${SH.day}" max="${today()}" onchange="SH.day=this.value"></label>
     <label class="f"><span>Mahlzeit</span><select onchange="SH.slot=this.value">${slotOpts(SH.slot)}</select></label></div>
-    <div class="card"><b class="num" style="font-size:30px">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div></div>
+    <div class="card"><b class="num n36">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div></div>
     <div class="btns"><button class="btn accent full" ${sel.length ? '' : 'disabled'} onclick="acceptShare()">In mein Tagebuch übernehmen</button></div>`);
 }
 const acceptShare = run(async () => {
@@ -1482,13 +1448,13 @@ function drawPicker(){
       : '<div class="note">Noch keine Rezepte. Lege unter Essen eine Mahlzeiten-Vorlage an.</div>';
   }
   if (P.tab === 'eigen'){
-    h += `<div id="pres"></div><div class="sec"><h3 style="font-size:19px;margin-bottom:8px">Neues Lebensmittel</h3><p class="small muted" style="margin-top:0">Nährwerte pro 100 g, z. B. von der Verpackung.</p>
+    h += `<div id="pres"></div><div class="sec"><h3 class="sub">Neues Lebensmittel</h3><p class="small muted" style="margin-top:0">Nährwerte pro 100 g, z. B. von der Verpackung.</p>
       <label class="f"><span>Name</span><input id="en" value="${esc(P.prefillName || '')}"></label>
       <div class="grid4">${[['ek','kcal'],['ep','Protein'],['ec','KH'],['ef','Fett']].map(([i, l]) => `<label class="f"><span>${l}</span><input id="${i}" inputmode="decimal"></label>`).join('')}</div>
       <label class="f"><span>Menge in g</span><input id="eg" inputmode="decimal" value="100"></label>
       <label class="check"><input type="checkbox" id="esave" checked> In meiner Liste speichern</label>
       <button class="btn full" onclick="saveOwnFood()">In den Korb</button></div>`;
-    if (P.mode === 'log') h += `<div class="sec"><h3 style="font-size:19px;margin-bottom:8px">Schnelleintrag</h3><p class="small muted" style="margin-top:0">Nur Gesamtwerte, z. B. für ein Restaurantessen. Wird sofort gespeichert.</p>
+    if (P.mode === 'log') h += `<div class="sec"><h3 class="sub">Schnelleintrag</h3><p class="small muted" style="margin-top:0">Nur Gesamtwerte, z. B. für ein Restaurantessen. Wird sofort gespeichert.</p>
       <label class="f"><span>Bezeichnung</span><input id="qn" placeholder="z. B. Pizza beim Italiener"></label>
       <div class="grid4">${[['qk','kcal'],['qp','Protein'],['qc','KH'],['qf','Fett']].map(([i, l]) => `<label class="f"><span>${l}</span><input id="${i}" inputmode="decimal"></label>`).join('')}</div>
       <button class="btn full ghost" onclick="saveQuick()">Schnelleintrag speichern</button></div>`;
@@ -1561,7 +1527,7 @@ function drawBasket(){
   basketSum();
 }
 function basketSum(){ const t = P.basket.reduce((a, b) => addN(a, scale(b.per, b.grams)), ZERO);
-  $('#bsum').innerHTML = `<b class="num" style="font-size:30px">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div>`; }
+  $('#bsum').innerHTML = `<b class="num n36">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div>`; }
 const saveBasket = run(async () => {
   const items = P.basket.filter(b => b.grams > 0);
   if (!items.length) return toast('Bitte Mengen eintragen');
@@ -1621,7 +1587,7 @@ function drawRecipeAmount(id){
   rPrev(id);
 }
 function rPrev(id){ const t = recipeTotals(S.rc[id], num($('#rf').value));
-  $('#aprev').innerHTML = `<b class="num" style="font-size:30px">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div>`; }
+  $('#aprev').innerHTML = `<b class="num n36">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div>`; }
 const logRecipe = run(async id => {
   const r = S.rc[id], f = num($('#rf').value) || 1;
   await add('log', S.day, { slot: P.slot, name: r.data.name, recipe_id: r.user_id === S.user.id ? id : null, factor: f, ...roundN(recipeTotals(r, f)) });
@@ -1682,7 +1648,7 @@ function drawRecipe(){
     <div class="f"><span>Geplant an</span></div>
     <div class="chips">${WD.map((d, i) => `<label class="chip"><input type="checkbox" ${R.days.includes(i) ? 'checked' : ''} onchange="R.days=this.checked?[...R.days,${i}]:R.days.filter(x=>x!==${i})"><span>${d}</span></label>`).join('')}</div>
     <label class="f"><span>Meine Portion (1 = Mengen wie unten)</span><input inputmode="decimal" value="${String(R.factor).replace('.', ',')}" oninput="R.factor=num(this.value)||1"></label>
-    <div class="sec-h"><h3 style="font-size:19px">Zutaten</h3><span class="muted small">${fmt(t.kcal)} kcal, P ${fmt(t.p)} g</span></div>
+    <div class="sec-h"><h3 class="sub" style="margin:0">Zutaten</h3><span class="muted small">${fmt(t.kcal)} kcal, P ${fmt(t.p)} g</span></div>
     <div class="list">${R.items.map((it, i) => `<div class="row"><div class="grow"><div class="t">${esc(it.name)}</div><div class="s">${fmt(it.grams)} g, ${fmt(scale(it.per, it.grams).kcal)} kcal</div></div><button class="iconbtn" aria-label="Zutat entfernen" onclick="R.items.splice(${i},1);drawRecipe()">×</button></div>`).join('')}
     <div class="row"><button class="btn sm ghost" onclick="openPicker({mode:'recipe',title:'Zutat hinzufügen'})">+ Zutat hinzufügen</button></div></div>
     <div class="btns"><button class="btn" style="flex:1" onclick="saveRecipe()">Vorlage speichern</button>${R.id ? `<button class="btn danger" onclick="deleteRecipe()">Löschen</button>` : ''}</div>`);
@@ -1825,9 +1791,9 @@ function libSelect(name){
   L.sel = name;
   const last = knownScheme(name);
   $('#libsel').innerHTML = `<div class="selpanel"><div class="sec-h" style="margin-bottom:4px"><h3>${esc(name)}</h3>${last ? `<span class="small muted" style="font-weight:600">Zuletzt: ${last}</span>` : ''}</div>
-    <div class="small muted" style="font-weight:700;margin-bottom:6px">Vorgabe antippen</div>
+    <div class="lbl" style="margin-bottom:8px">Vorgabe antippen</div>
     <div class="presets">${PRESETS.map(([s, f, t], i) => `<button onclick="libAdd(${i})">${scheme(s, f, t)}</button>`).join('')}</div>
-    <div class="btns" style="margin-top:10px"><button class="btn line" style="flex:1" onclick="L.sel=null;$('#libsel').innerHTML=''">Abbrechen</button><button class="btn ghost" style="flex:1" onclick="libAdd(-1)">Eigene Werte</button></div></div>`;
+    <div class="btns" style="margin-top:12px"><button class="btn line" style="flex:1" onclick="L.sel=null;$('#libsel').innerHTML=''">Abbrechen</button><button class="btn ghost" style="flex:1" onclick="libAdd(-1)">Eigene Werte</button></div></div>`;
   $('#libsel').scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 function libAdd(i){
@@ -1880,7 +1846,7 @@ function drawTextImport(){
 }
 function previewImport(){
   const rows = $('#tim').value.split('\n').map(parseLine).filter(Boolean);
-  $('#timp').innerHTML = rows.length ? `<div class="small muted" style="font-weight:700;margin-bottom:6px">So wird es übernommen</div><div class="list">${rows.map(r => `<div class="row"><span class="okdot ${r.guess ? 'guess' : ''}">${r.guess ? '?' : '✓'}</span><div class="grow t">${esc(r.name)}</div><div class="k num" style="font-size:18px">${scheme(r.sets, r.from, r.to)}</div></div>`).join('')}</div>` : '';
+  $('#timp').innerHTML = rows.length ? `<div class="lbl" style="margin-bottom:8px">So wird es übernommen</div><div class="list">${rows.map(r => `<div class="row"><span class="okdot ${r.guess ? 'guess' : ''}">${r.guess ? '?' : '✓'}</span><div class="grow t">${esc(r.name)}</div><div class="k num" style="font-size:18px">${scheme(r.sets, r.from, r.to)}</div></div>`).join('')}</div>` : '';
 }
 function applyImport(){
   const rows = $('#tim').value.split('\n').map(parseLine).filter(Boolean);
