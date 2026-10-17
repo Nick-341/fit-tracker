@@ -11,7 +11,9 @@ Du arbeitest als Projektleiter und Entwicklungschef zusammen mit dem Nutzer. Er 
 - `sw.js`: Service Worker. Eigene Dateien network-first, CDN-Bibliotheken und Schriften cache-first. Daten werden nie im SW gecacht.
 - `manifest.webmanifest`, `icons/`: PWA-Metadaten, Logo „Spotlight“ (Hantel vor gelbem Kreis auf #15181C).
 - `schema.sql`: komplette Datenbank für Neueinrichtung. `update-N.sql`: Migrationen für bestehende Installationen.
-- `ANLEITUNG.md`: Nutzeranleitung (Einrichtung, Funktionen, „Neu in x.y“).
+- `ANLEITUNG.md`: Nutzeranleitung mit „Neu in x.y.z“ (seit 1.6.0).
+- `CHANGELOG.md`: Änderungen je Version, in jedem Commit pflegen. In der App zeigt „Was ist neu“ nur die aktuelle Version.
+- `docs/design/<version>/`: Entwürfe (je Screen hell/dunkel). Bei Widerspruch zwischen Bild und Auftrag gilt der Auftrag.
 - `tests/`: Rauchtest mit simulierter Supabase (siehe Skill `test`).
 - `BACKLOG.md`: offene Aufgaben, Prioritäten, bewusst Gestrichenes.
 
@@ -36,6 +38,9 @@ Externe Bibliotheken (per `<script>` mit SRI-Prüfsumme, exakt gepinnt): `@supab
 - Level-System belohnt **Beständigkeit, nie Extreme** (kein Bonus für großes Defizit). Partner sieht nur einen Snapshot (`profiles.data.game`).
 - Satzarten: **nur Aufwärmsätze**, als eigener Bereich über den Arbeitssätzen. Limit-/Drop-Sätze und RIR bewusst gestrichen.
 - Keine Einstellungen für das Heute-Layout, stattdessen gutes Standard-Layout.
+- „Im Ziel“ (±10 % vom Kalorienziel, mind. halbes Ziel geloggt) gibt es nur einmal: `inTarget()`. Level-System, Wochenleiste und Wochenrückblick nutzen dieselbe Funktion.
+- Training „Als Nächstes“: der Trainingstag, der am längsten nicht trainiert wurde (`nextRoutine`). Feste Wochentage für Trainingstage gibt es noch nicht.
+- Pausenleiste in der Einheit: „+30 s“ und „×“ direkt, −15/+15 nach Tipp auf die Restzeit. Timer-Knöpfe nie im 250-ms-Takt neu bauen (Taps gehen sonst verloren).
 - Keine Yazio-Anbindung (inoffizielle API, Nutzungsbedingungen, Stabilität). BLS (Bundeslebensmittelschlüssel, seit 2025 kostenlos) als mögliche spätere Ergänzung.
 - Bleibt vorerst Web-App (PWA). Native App via Capacitor + TestFlight erst bei konkretem Bedarf (Apple Health, Push).
 - SQL wird vom Nutzer manuell im Supabase-Dashboard ausgeführt. Kein direkter Datenbankzugriff durch Claude.

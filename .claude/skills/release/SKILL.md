@@ -16,7 +16,7 @@ Versionsschema: `MAJOR.MINOR.PATCH`. Hotfix (nur Fehler) → PATCH, neue Funktio
 5. **Bibliotheken geändert?** Nur dann: neue Version exakt pinnen (mindestens zwei Wochen alt), SRI-Hash (sha384) neu berechnen und in `index.html` **und** in `LIBS` in `sw.js` anpassen:
    `curl -sL <URL> | openssl dgst -sha384 -binary | openssl base64 -A`
 6. **SQL nötig?** Wenn ja (Skill `datenbank`): `update-N.sql` vorhanden und `schema.sql` ergänzt. Im Release-Hinweis an den Nutzer **fett** vermerken, dass die SQL-Datei *vor* dem Push im Supabase SQL Editor ausgeführt werden muss.
-7. **Anleitung:** in `ANLEITUNG.md` einen Absatz „**Neu in x.y.z**:“ über dem vorherigen ergänzen.
+7. **Anleitung und Changelog:** in `ANLEITUNG.md` einen Absatz „**Neu in x.y.z**:“ über dem vorherigen ergänzen. `CHANGELOG.md` hat einen Abschnitt `## x.y.z – TT.MM.JJJJ` mit allen Punkten (wird in jedem Commit mitgepflegt).
 8. **Backlog:** erledigte Punkte in `BACKLOG.md` unter „Erledigt“ eintragen, „Aktuelle Version“ anpassen.
 9. **Commit und Tag:** `git add -A && git commit -m "Spotter x.y.z: <Kurzbeschreibung>" && git tag vx.y.z`. **Nie selbst pushen.** Der Nutzer pusht über GitHub Desktop (Commit und Tag; Tags dort ggf. mit „Push tags“ bzw. beim nächsten Push mitnehmen).
 

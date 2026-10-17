@@ -1035,9 +1035,14 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.6.0';
 const CHANGELOG = [
-  ['Fehlerbehebungen', 'Die Kopfzeile zeigt bei „Gestern“ wieder das richtige Datum. Im Training sitzen Pausentimer und „Einheit speichern“ jetzt gemeinsam in einer Leiste am unteren Rand, Speichern ist immer erreichbar.']
+  ['Neuer Look', 'Alle Bereiche haben ein frisches Design. Die dunkle Anzeigetafel zeigt oben immer das Wichtigste, die Tab-Leiste hat Symbole.'],
+  ['Heute auf einen Blick', 'Groß steht, wie viele Kalorien übrig sind. Die Wochenleiste zeigt, an welchen Tagen ihr beide im Ziel wart, die Trainingskachel schlägt den nächsten Trainingstag vor.'],
+  ['Schneller eintragen', 'Unter Essen stehen alle Mahlzeiten in einer Liste, Suche und Scanner sitzen unten. In der Suche steht oben, was du in dieser Mahlzeit oft isst. „+“ legt es mit deiner letzten Menge in den Korb.'],
+  ['Training und Körper', 'Training zeigt, welcher Trainingstag dran ist. Unter Körper siehst du deinen Gewichtstrend und dein Tempo pro Woche.'],
+  ['Profil aufgeräumt', 'Alle Einstellungen sind jetzt in drei Gruppen sortiert.'],
+  ['Fehlerbehebung', 'Mahlzeiten-Vorlagen zeigen wieder die richtigen Kalorien, auch beim Abhaken im Plan.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
