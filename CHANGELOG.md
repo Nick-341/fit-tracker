@@ -2,6 +2,7 @@
 
 ## 1.6.0 – 17.10.2026
 - Design-System: Anzeigetafel, neue Farben, Zahlen in fester Breite
+- Tab-Leiste: Icons über den Bezeichnungen
 
 ## 1.5.2 – 16.10.2026
 - Datum „Gestern“ in Safari korrekt
