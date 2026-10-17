@@ -7,6 +7,7 @@
 - Essen: alle Mahlzeiten in einer Liste zum Aufklappen, Vorschläge in der passenden Mahlzeit, Suche und Scan fest unten
 - Suche: oft gegessene Lebensmittel der Mahlzeit zuerst, Schnell-Plus mit der letzten Menge, Korb mit „Eintragen“
 - Körper: Trendtafel mit Ø 7 Tage, Tempo pro Woche und Diagramm, Maße als Liste
+- Profil: Tafel mit Foto und Level, Einstellungen in drei Gruppen
 - Fehlerbehebung: Vorlagen zeigten 0 kcal, Abhaken im Plan trug 0 kcal ein
 
 ## 1.5.2 – 16.10.2026

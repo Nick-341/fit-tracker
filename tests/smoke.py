@@ -238,8 +238,20 @@ def flow_koerper(ctx):
 def flow_profil(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Profil'); pg.wait_for_timeout(600); shot(pg, 'profil', True)
+    check(pg.query_selector('.board .plvl') is not None, 'Profil: Tafel mit Level')
+    pg.click('text=Bedarf neu berechnen'); pg.wait_for_timeout(500); shot(pg, 'profil_rechner')
     check(pg.query_selector('#calcres .tgt') is not None, 'Kalorienrechner berechnet Ziele')
-    check(pg.query_selector('text=Freigaben') is not None, 'Freigaben vorhanden')
+    pg.click('#sheetBody >> text=Ziele speichern'); pg.wait_for_timeout(400)
+    check('gespeichert' in toast(pg), 'Ziele speichern')
+    for row, probe in [('Kalorien & Makros', '#adapt'), ('Freigaben', '#sheetBody .switch'), ('Verbindung', 'text=Verbindung lösen'), ('Pausentimer', '#sheetBody select'),
+                       ('Darstellung', '#sheetBody .seg'), ('Daten & Export', 'text=Meine Daten exportieren'), ('Sicherheit', 'text=Auf allen Geräten abmelden')]:
+        pg.click(f'#view >> text={row}'); pg.wait_for_timeout(300)
+        check(pg.query_selector(probe) is not None, f'Profil: {row} erreichbar')
+        close(pg)
+    check(len(pg.query_selector_all('.prow2')) == 8, 'Profil: alle Einstellungen gruppiert')
+    pg.click('.plvl'); pg.wait_for_timeout(500)
+    check(pg.query_selector('#sheetBody .badges') is not None, 'Profil: Level-Zeile öffnet Abzeichen')
+    close(pg); bottom_free(pg, 'Profil')
     return pg
 
 def flow_hell_dunkel(ctx):
