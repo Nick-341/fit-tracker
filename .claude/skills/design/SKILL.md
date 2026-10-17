@@ -61,6 +61,10 @@ Archivo (variabel). Überschriften: `font-weight:900; font-stretch:112%`. Fließ
 - **Gelb nur für Fortschritt, Erledigtes und die eine Hauptaktion.** Keine gelben Deko-Flächen.
 - **Hinweise bündeln statt Karten stapeln** (eine `.hintbar` statt mehrerer Karten).
 - Pro Ansicht höchstens eine `.board`, immer oben.
+- **Wörter nie mitten im Wort trennen:** kein `word-break: break-all`, kein `overflow-wrap: anywhere` (Ausnahme nur für lange URLs o. Ä., dann im Code begründen). Zahl und Einheit mit `&nbsp;` verbinden („ca.&nbsp;55&nbsp;min“).
+- **Einzeilige Titel** in Kacheln, Listenzeilen, Tafeln und Buttons: `white-space:nowrap; overflow:hidden; text-overflow:ellipsis`. Mehrzeilig nur bei Fließtext und Hinweisen.
+- **In Flex- und Grid-Kindern mit Text immer `min-width:0`**, Rasterspalten als `minmax(0,1fr)` statt `1fr` (sonst wächst die Spalte mit langem Text).
+- Prüfen in 390 × 844 **und** 375 × 667, hell und dunkel, mit langen Namen (z. B. „Rumänisches Kreuzheben“, „Hähnchen-Reis-Bowl mit Gemüse“). Der Rauchtest `flow_umbruch` meldet getrennte Wörter und Text über den Karten- oder Bildschirmrand.
 - Tippflächen mindestens 44 px hoch (`.btn.sm` mit 36 px nur für Nebenaktionen).
 - iPhone-Safe-Area berücksichtigen (`env(safe-area-inset-*)`), die Tab-Leiste schwebt unten.
 - Pro Ansicht genau eine Hauptaktion in Akzentfarbe.

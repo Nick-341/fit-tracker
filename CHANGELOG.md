@@ -1,5 +1,14 @@
 # Changelog Spotter
 
+## 1.6.0.1 – 17.10.2026
+- Heute: Trainingsname in der Kachel bricht nicht mehr mitten im Wort um (18 px, einzeilig mit „…“), „Wochenrückblick“ einzeilig
+- Keine Worttrennung mitten im Wort mehr in der ganzen App, Rasterspalten schrumpfen mit langen Namen, einzeilige Titel enden mit „…“
+- Fehlerbehebung aus 1.6.0: Suchfeld in der Lebensmittelsuche, kompakte Tafel unter Essen, Hinweisleiste und großer Button hatten durch das Aufräumen fehlerhafte Stile
+- Körper: Gewichtstafel passt auf kleinere iPhones (375 × 667)
+- Training: „1 Übung“ statt „1 Übungen“, Zahl und Einheit bleiben zusammen
+- Design: Entwürfe 1.6 aktualisiert
+- Test: Umbruch-Prüfung für alle Screens in 390 × 844 und 375 × 667
+
 ## 1.6.0 – 17.10.2026
 - Design-System: Anzeigetafel, neue Farben, Zahlen in fester Breite
 - Tab-Leiste: Icons über den Bezeichnungen

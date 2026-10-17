@@ -3,6 +3,8 @@
 Spotter ist eure private Fitness- und Ernährungs-App für zwei. Öffne sie in Safari und füge sie über „Teilen → Zum Home-Bildschirm“ hinzu.
 Nach jedem Update die App einmal mit Internet öffnen, damit die neue Version geladen wird.
 
+**Neu in 1.6.0.1**: Fehlerbehebungen. Lange Namen werden nicht mehr mitten im Wort getrennt, das Suchfeld sieht wieder richtig aus, und auf kleineren iPhones passt alles auf den Bildschirm.
+
 **Neu in 1.6.0**: Neuer Look für alle Bereiche.
 - **Heute**: Die dunkle Anzeigetafel zeigt groß, wie viele Kalorien übrig sind, darunter Protein, Kohlenhydrate und Fett. Bist du drüber, steht dort „+120“ und „kcal drüber“.
 - **Diese Woche**: Für jeden Tag ein Punkt für dich (gelb) und deinen Partner (blau). Gefüllt heißt: Kalorien im Ziel. Tippe auf einen Tag, um dorthin zu springen. Tippe auf die Zeile mit dem Namen deines Partners, um seinen Tag zu sehen und Kudos zu geben.

@@ -200,7 +200,7 @@ def flow_training(ctx):
     check(not pg.evaluate('TM.end > 0'), 'Auto-Timer abschaltbar')
     pg.click('.wsave'); pg.wait_for_timeout(500)
     check('gespeichert' in toast(pg), 'Einheit speichern')
-    pg.click('text=Übungsfortschritt'); pg.wait_for_timeout(500); pg.click('#sheetBody .row.tap >> nth=0'); pg.wait_for_timeout(300)
+    pg.click('.lhead >> text=Fortschritt'); pg.wait_for_timeout(500); pg.click('#sheetBody .row.tap >> nth=0'); pg.wait_for_timeout(300)
     shot(pg, 'training_fortschritt'); close(pg)
     pg.click('.trow2 >> nth=0'); pg.wait_for_timeout(300)
     check(pg.query_selector('#sheetBody >> text=Bearbeiten') is not None, 'Einheit öffnet Details'); close(pg)
@@ -285,6 +285,53 @@ def flow_bewegung(ctx):
     check(anim() == 'none', 'Bewegung: aus bei „Bewegung reduzieren“')
     return pg
 
+# Findet Wörter, die über mehrere Zeilen getrennt sind, und Text, der sichtbar über den Bildschirmrand ragt.
+# Bindestriche dürfen trennen, abgeschnittener Text mit Ellipse zählt nicht als Überlauf.
+WRAP_JS = r'''(() => { const bad = new Set(), W = innerWidth;
+  const clipRight = el => { let r = W; for (let a = el; a && a !== document.body; a = a.parentElement){ const s = getComputedStyle(a); if (s.overflowX !== 'visible') r = Math.min(r, a.getBoundingClientRect().right); } return r; };
+  const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+  while ((n = tw.nextNode())){ const el = n.parentElement; if (!el || !el.getClientRects().length) continue;
+    const cr = clipRight(el), re = /[^\s\-–·\/]+/g; let m;
+    while ((m = re.exec(n.data))){ const r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length);
+      const rs = [...r.getClientRects()].filter(x => x.width > 0); if (!rs.length) continue;
+      if (new Set(rs.map(x => Math.round(x.top))).size > 1) bad.add('Wort getrennt: „' + m[0] + '“');
+      if (rs.some(x => Math.min(x.right, cr) > W + 1)) bad.add('Über den Rand: „' + m[0] + '“');
+      const box = el.closest('.board,.card,.list,.tile,.note,.hintbar,.ex,.fbar,.wbar,.bbar,.seg,.btn');
+      if (box && rs.some(x => Math.min(x.right, cr) > box.getBoundingClientRect().right + 1)) bad.add('Über den Kartenrand: „' + m[0] + '“'); } }
+  return [...bad]; })()'''
+
+def flow_umbruch(ctx):
+    pg = open_app(ctx)
+    # Lange Namen wie im Auftrag
+    pg.evaluate("""(async () => {
+      await upd('r1', {name:'Ganzkörper A', exercises:[{name:'Rumänisches Kreuzheben',sets:3,reps:'8-10'},{name:'Bankdrücken',sets:4,reps:'6-8'}]});
+      await add('log', today(), {slot:'mittag', name:'Hähnchen-Reis-Bowl mit Gemüse', grams:450, per:{kcal:140,p:10,c:15,f:4}, kcal:630, p:45, c:68, f:18});
+      await add('workout', addDays(today(), -1), {name:'Rumänisches Kreuzheben', exercises:[{name:'Rumänisches Kreuzheben', sets:[{kg:90,reps:8}]}]});
+      await add('weight', today(), {kg: 85.4});
+    })()"""); pg.wait_for_timeout(500)
+    screens = [
+      ('heute', "S.tab='heute';S.day=today();render()"), ('heute_ohne_training', "S.tab='heute';S.day=addDays(today(),-3);render()"), ('heute_partner', "S.tab='heute';render().then(()=>openPartnerDay())"), ('heute_plan', "openPlan()"),
+      ('woche', "S.day=today();openWeek()"), ('essen', "S.tab='essen';S.openSlot='mittag';render()"), ('suche', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'})"),
+      ('koerper', "S.tab='koerper';render()"), ('training', "S.tab='training';render()"), ('anderes', "S.tab='training';render().then(()=>openOther())"),
+      ('einheit', "startWorkout('r1')"), ('einheit_detail', "S.tab='training';render().then(()=>openWo(Object.keys(S.wos).at(-1)))"),
+      ('editor', "openRoutine('r1')"), ('profil', "S.tab='profil';render()"), ('level', "openGame()"), ('rechner', "openCalc()")]
+    pg.evaluate("S.day=addDays(today(),-3);S.tab='heute';render()"); pg.wait_for_timeout(500)
+    check('Ganzkörper A' in pg.inner_text('.tile .tname'), 'Kachel zeigt langen Trainingsnamen')
+    for w, h in [(390, 844), (375, 667)]:
+        pg.set_viewport_size({'width': w, 'height': h})
+        for scheme in ['light', 'dark']:
+            pg.emulate_media(color_scheme=scheme)
+            for name, js in screens:
+                pg.evaluate('closeSheet(); stopRest(); clearDraft()'); pg.evaluate(js); pg.wait_for_timeout(450)
+                for sc in [0, 1e6]:
+                    pg.evaluate(f"window.scrollTo(0,{sc}); const c=document.querySelector('.sheet-card'); if(c) c.scrollTop={sc}"); pg.wait_for_timeout(80)
+                    bad = pg.evaluate(WRAP_JS)
+                    check(not bad, f'Umbruch {name} {w}×{h} {scheme}' + ('' if not bad else ': ' + '; '.join(bad[:4])))
+                    if scheme == 'light' and sc == 0: shot(pg, f'umbruch_{name}_{w}')
+                    if bad: break
+    pg.evaluate('closeSheet(); stopRest(); clearDraft()')
+    return pg
+
 def flow_hell_dunkel(ctx):
     pg = open_app(ctx)
     for t in ['light', 'dark']:
@@ -293,7 +340,7 @@ def flow_hell_dunkel(ctx):
     return pg
 
 FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_dran,
-         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_hell_dunkel]
+         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():
     filt = sys.argv[1] if len(sys.argv) > 1 else ''
