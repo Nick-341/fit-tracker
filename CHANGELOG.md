@@ -3,6 +3,7 @@
 ## 1.6.0 – 17.10.2026
 - Design-System: Anzeigetafel, neue Farben, Zahlen in fester Breite
 - Tab-Leiste: Icons über den Bezeichnungen
+- Heute: Anzeigetafel statt Ring, Wochenleiste für euch beide, Trainingskachel mit nächstem Trainingstag, Hinweise gebündelt
 
 ## 1.5.2 – 16.10.2026
 - Datum „Gestern“ in Safari korrekt

@@ -63,6 +63,12 @@ def open_app(ctx, dismiss=True):
 def toast(pg): return pg.evaluate("document.querySelector('#toast').textContent")
 def shot(pg, name, full=False): pg.screenshot(path=str(SHOTS / f'{name}.png'), full_page=full)
 def close(pg): pg.evaluate('closeSheet()'); pg.wait_for_timeout(150)
+def bottom_free(pg, name):
+    # Ganz nach unten scrollen: Das letzte Element der Ansicht muss über der Tab-Leiste enden.
+    pg.evaluate('window.scrollTo(0, 1e6)'); pg.wait_for_timeout(150)
+    r = pg.evaluate("(()=>{const v=document.querySelector('#view').lastElementChild.getBoundingClientRect();const t=document.querySelector('.tabs-in').getBoundingClientRect();return [v.bottom,t.top]})()")
+    check(r[0] <= r[1] + 1, f'{name}: Tab-Leiste verdeckt nichts')
+    pg.evaluate('window.scrollTo(0, 0)')
 
 # ---------- Abläufe ----------
 def flow_start_changelog(ctx):
@@ -74,17 +80,40 @@ def flow_start_changelog(ctx):
 
 def flow_heute(ctx):
     pg = open_app(ctx)
-    check(pg.query_selector('.hero') is not None, 'Heute zeigt Kalorienring')
+    check(pg.query_selector('#board .bnum') is not None, 'Heute zeigt Anzeigetafel')
+    check(len(pg.query_selector_all('.wgrid .wcol')) == 7, 'Wochenleiste mit 7 Tagen')
+    check(pg.query_selector('.wdot.pa') is not None, 'Wochenleiste zeigt Partnerreihe')
+    bottom_free(pg, 'Heute')
     check('undefined' not in pg.inner_text('#dayl'), 'Datum ohne "undefined"')
     # Safari formatiert Datumsangaben ohne Kommas, Chrome mit. Safari-Verhalten nachbilden:
     pg.evaluate("(()=>{const o=Date.prototype.toLocaleDateString;Date.prototype.toLocaleDateString=function(...a){return o.apply(this,a).replace(/,/g,'')}})()")
     pg.click('#prev'); pg.wait_for_timeout(400)
     check('undefined' not in pg.inner_text('#dayl'), 'Datum "Gestern" ohne "undefined" (Safari-Format)')
     pg.click('#dayl'); pg.wait_for_timeout(400)
-    if pg.query_selector('.prow'): pg.click('.prow'); pg.wait_for_timeout(400)
     shot(pg, 'heute', True)
+    pg.click('.wcol >> nth=0'); pg.wait_for_timeout(400)
+    check(pg.evaluate('wd(S.day)') == 0, 'Tipp auf Wochentag springt dorthin')
+    pg.click('#dayl'); pg.wait_for_timeout(400)
+    pg.click('.pline'); pg.wait_for_timeout(400); shot(pg, 'heute_partner')
+    check(pg.query_selector('#sheetBody .kudos') is not None, 'Partnertag mit Kudos öffnet')
+    close(pg)
     pg.click('text=Wochenrückblick'); pg.wait_for_timeout(500); shot(pg, 'heute_wochenrueckblick')
     check(pg.query_selector('text=Tage geloggt') is not None, 'Wochenrückblick zeigt Kennzahlen')
+    return pg
+
+def flow_heute_faelle(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("S.day = addDays(today(), -20); render()"); pg.wait_for_timeout(500); shot(pg, 'heute_leer')
+    check(pg.inner_text('#board .bnum').strip() == '2.100', 'Leerer Tag: ganzes Ziel übrig')
+    pg.evaluate("S.day = today(); add('log', today(), {slot:'abend',name:'Pizza',kcal:1500,p:40,c:180,f:60}).then(render)"); pg.wait_for_timeout(600)
+    shot(pg, 'heute_drueber')
+    check('drüber' in pg.inner_text('#board .lbl >> nth=0').lower() and pg.inner_text('#board .bnum').startswith('+'), 'Überschreitung: +Wert und „kcal drüber“')
+    check(pg.query_selector('#board .track.t10.over') is not None, 'Überschreitung: Balken rot')
+    pg.evaluate("S.partner.data.share = {nutrition:false, training:false, weight:false, measure:false, level:false}; render()"); pg.wait_for_timeout(500)
+    shot(pg, 'heute_ohne_freigaben')
+    check(pg.query_selector('.wdot.pa') is None and 'privat' in pg.inner_text('.pline'), 'Ohne Freigaben: nur eigene Reihe')
+    pg.evaluate("S.partner = null; render()"); pg.wait_for_timeout(500); shot(pg, 'heute_ohne_partner')
+    check(pg.query_selector('.wdot.pa') is None and 'Verbinde' in pg.inner_text('.pline'), 'Ohne Partner: nur eigene Reihe')
     return pg
 
 def flow_essen_korb(ctx):
@@ -181,7 +210,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_essen_korb, flow_essen_teilen, flow_training,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_essen_teilen, flow_training,
          flow_partneransicht, flow_offline_sync, flow_profil, flow_hell_dunkel]
 
 def main():
