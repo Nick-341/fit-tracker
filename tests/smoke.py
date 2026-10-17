@@ -214,11 +214,25 @@ def flow_offline_sync(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Körper'); pg.wait_for_timeout(400)
     ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
-    pg.fill('#wkg', '84,9'); pg.click('#view >> text=Speichern >> nth=0'); pg.wait_for_timeout(500)
+    pg.click('text=Gewicht eintragen'); pg.wait_for_timeout(300)
+    pg.fill('#wkg', '84,9'); pg.click('#sheetBody >> text=Speichern'); pg.wait_for_timeout(500)
     check(pg.evaluate('QUEUE.length') == 1, 'Offline: Eintrag landet in Warteschlange')
     shot(pg, 'offline')
     ctx.set_offline(False); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1200)
     check(pg.evaluate('QUEUE.length') == 0, 'Online: Warteschlange wird hochgeladen')
+    return pg
+
+def flow_koerper(ctx):
+    pg = open_app(ctx)
+    pg.click('#tabs >> text=Körper'); pg.wait_for_timeout(500); shot(pg, 'koerper', True)
+    check(pg.query_selector('.board .bchart') is not None, 'Körper: Trendtafel mit Diagramm')
+    check('pro Woche' in pg.inner_text('.board'), 'Körper: Tempo pro Woche')
+    pg.click('.bseg >> text=3 M'); pg.wait_for_timeout(400)
+    check(pg.query_selector('.bseg button.on').inner_text() == '3 M', 'Körper: Zeitraum wechseln')
+    pg.click('[aria-label="Maße eintragen"]'); pg.wait_for_timeout(300)
+    pg.fill('#m_taille', '84'); pg.click('#sheetBody >> text=Speichern'); pg.wait_for_timeout(500)
+    check(pg.query_selector('.mrow2') is not None, 'Körper: Maße als Liste')
+    bottom_free(pg, 'Körper')
     return pg
 
 def flow_profil(ctx):
@@ -236,7 +250,7 @@ def flow_hell_dunkel(ctx):
     return pg
 
 FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training,
-         flow_partneransicht, flow_offline_sync, flow_profil, flow_hell_dunkel]
+         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_hell_dunkel]
 
 def main():
     filt = sys.argv[1] if len(sys.argv) > 1 else ''

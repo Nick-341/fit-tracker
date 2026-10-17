@@ -192,6 +192,20 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .binfo .s{display:block;font-size:13px;color:var(--muted)}
 .bcount{flex:none;width:36px;height:36px;border-radius:18px;background:var(--ink);color:var(--bg);font-weight:900;display:flex;align-items:center;justify-content:center}
 
+/* Körper */
+.kbig{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:16px 0 8px}
+.pace{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.pace .small{white-space:nowrap;margin-top:4px}
+.bchart{width:100%;height:auto;display:block;margin:8px 0 12px}
+.bseg{background:var(--board-soft);margin:0}
+.bseg button{color:var(--board-muted)}
+.bseg button.on{background:var(--board-ink);color:var(--board)}
+.btn.big{min-height:52px;font-size:17px}
+.lhead{min-height:56px}
+.lhead h3{font-size:20px}
+.mrow2{min-height:52px}
+.mdiff{width:48px;text-align:right;font-size:14px;color:var(--muted)}
+
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
 .sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
@@ -439,6 +453,7 @@ function dateParts(s){
   const d = new Date(s + 'T12:00:00');
   return { wd: WD[wd(s)] + '.', dm: d.getDate() + '. ' + MON[d.getMonth()] };
 }
+function relDays(s){ const n = daysBetween(s, today()); return n <= 0 ? 'heute' : n === 1 ? 'gestern' : `vor ${n} Tagen`; }
 function dayLabel(s){
   if (s === today()) return 'Heute';
   if (s === addDays(today(), -1)) return 'Gestern';
@@ -1873,46 +1888,78 @@ function chart(pts, caption){
     <polyline points="${line}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
   </svg><div class="small muted">${caption || 'Punkte: Tageswerte. Linie: 7-Tage-Durchschnitt, der aussagekräftigere Wert.'}</div></div>`;
 }
+const WRANGE = [['4w','4 W',28],['3m','3 M',91],['1j','1 J',365],['all','Alles',0]];
+// Diagramm auf der Tafel: Einzelwiegungen als graue Punkte, Ø-Linie, Endpunkt betont
+function boardChart(pts){
+  if (pts.length < 2) return '<p class="small muted" style="margin:16px 0">Ab zwei Einträgen erscheint hier der Verlauf.</p>';
+  const Wd = 340, Ht = 130, T = 10, B = 10, Rr = 8;
+  const vals = pts.flatMap(p => [p.v, p.avg]); const lo = Math.min(...vals) - .2, hi = Math.max(...vals) + .2;
+  const span = Math.max(1, daysBetween(pts[0].day, pts.at(-1).day));
+  const X = d => 4 + daysBetween(pts[0].day, d) / span * (Wd - 4 - Rr);
+  const Y = v => T + (hi - v) / (hi - lo || 1) * (Ht - T - B);
+  const line = pts.map(p => `${X(p.day).toFixed(1)},${Y(p.avg).toFixed(1)}`).join(' '), e = pts.at(-1);
+  return `<svg class="bchart" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="Gewichtsverlauf von ${shortDate(pts[0].day)} bis ${shortDate(e.day)}">
+    ${[0.25, 0.5, 0.75].map(f => `<line x1="0" x2="${Wd}" y1="${(T + f * (Ht - T - B)).toFixed(1)}" y2="${(T + f * (Ht - T - B)).toFixed(1)}" stroke="var(--board-soft)"/>`).join('')}
+    ${pts.map(p => `<circle cx="${X(p.day).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3" fill="var(--board-muted)" opacity=".6"/>`).join('')}
+    <polyline points="${line}" fill="none" stroke="var(--lc)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(e.day).toFixed(1)}" cy="${Y(e.avg).toFixed(1)}" r="6" fill="var(--lc)"/></svg>`;
+}
+const weekAvg = (ws, end) => { const w = ws.filter(x => x.day <= end && daysBetween(x.day, end) < 7); return w.length ? w.reduce((a, x) => a + num(x.data.kg), 0) / w.length : null; };
 async function rKoerper(){
   const uid = viewId(), mine = own();
-  const [ws, ms] = await Promise.all([ q('weight', uid, addDays(S.day, -120), S.day), q('measure', uid, null, S.day) ]);
-  const tw = ws.find(w => w.day === S.day), tm = ms.find(m => m.day === S.day);
-  const tr = trend(ws);
+  const rg = WRANGE.find(r => r[0] === (S.wr || '4w'));
+  const [ws, ms] = await Promise.all([ q('weight', uid, rg[2] ? addDays(S.day, -(rg[2] + 7)) : null, S.day), q('measure', uid, null, S.day) ]);
+  const tw = ws.find(w => w.day === S.day), lastW = ws.at(-1);
   const hideW = !mine && !shares(S.partner, 'weight'), hideM = !mine && !shares(S.partner, 'measure');
   let h = '';
-  if (mine) h += `<div class="card"><label class="f" style="margin:0"><span>Gewicht ${dayLabel(S.day) === 'Heute' ? 'heute' : 'am ' + shortDate(S.day)} (morgens, nüchtern)</span>
-    <div class="searchrow" style="margin:0"><input id="wkg" inputmode="decimal" placeholder="kg" value="${tw ? String(tw.data.kg).replace('.', ',') : ''}"><button class="btn" onclick="saveWeight('${tw?.id || ''}')">Speichern</button></div></label></div>`;
-  h += `<div class="sec"><h2 style="margin-bottom:8px">Gewicht</h2>${hideW ? privNote('das Gewicht') : chart(tr)}`;
-  if (tr.length >= 2){
-    const last = tr.at(-1);
-    const ref = d => { const c = tr.filter(p => daysBetween(p.day, last.day) >= d); return c.length ? c.at(-1) : null; };
-    const r7 = ref(7), r30 = ref(28);
-    const dlt = r => r ? (last.avg - r.avg >= 0 ? '+' : '') + fmt1(last.avg - r.avg) : 'k. A.';
-    h += `<div class="stats"><div><b>${fmt1(last.avg)}</b><span>Ø aktuell, kg</span></div><div><b>${dlt(r7)}</b><span>seit 7 Tagen</span></div><div><b>${dlt(r30)}</b><span>seit 4 Wochen</span></div></div>`;
+  if (hideW) h += privNote('das Gewicht');
+  else {
+    const tr = trend(ws), pts = rg[2] ? tr.filter(p => daysBetween(p.day, S.day) <= rg[2]) : tr, last = tr.at(-1);
+    // Tempo: Differenz zweier Wochenschnitte (letzte 7 Tage gegen die 7 Tage davor)
+    const a = last ? weekAvg(ws, last.day) : null, b = last ? weekAvg(ws, addDays(last.day, -7)) : null;
+    const pace = a !== null && b !== null && ws.some(x => daysBetween(x.day, last.day) >= 7) ? a - b : null;
+    h += `<div class="board ${mine ? '' : 'pboard'}" style="--lc:${mine ? 'var(--accent)' : 'var(--partner)'}">
+      <div class="bhead"><span class="lbl">Gewicht · Trend</span><span class="small muted">${lastW ? (tw ? `${dayLabel(S.day) === 'Heute' ? 'heute' : shortDate(S.day)} ${fmt1(tw.data.kg)} kg gewogen` : `zuletzt ${fmt1(lastW.data.kg)} kg am ${shortDate(lastW.day)}`) : 'noch nicht gewogen'}</span></div>
+      <div class="kbig"><div><b class="num n96">${last ? fmt1(last.avg) : '–'}</b><span class="unit">kg</span></div>
+        ${pace !== null ? `<div class="pace"><b class="num n36">${pace > 0 ? '+' : pace < 0 ? '−' : '±'}${fmt1(Math.abs(pace))}</b><span class="small muted">kg pro Woche</span></div>` : ''}</div>
+      ${boardChart(pts)}
+      <div class="seg bseg">${WRANGE.map(([k, l]) => `<button class="${rg[0] === k ? 'on' : ''}" onclick="S.wr='${k}';render()">${l}</button>`).join('')}</div></div>`;
+    if (mine) h += `<button class="btn accent full big" style="margin-top:12px" onclick="openWeight()">Gewicht eintragen</button>`;
   }
-  h += '</div><div class="sec"><h2 style="margin-bottom:8px">Körpermaße</h2>';
-  if (mine) h += `<div class="card"><p class="small muted" style="margin-top:0">In cm, z. B. alle zwei Wochen. Leere Felder werden übersprungen.</p><div class="grid2">${MEAS.map(([k, l]) => `<label class="f"><span>${l}</span><input id="m_${k}" inputmode="decimal" value="${tm?.data[k] ? String(tm.data[k]).replace('.', ',') : ''}"></label>`).join('')}</div>
-    <button class="btn full" onclick="saveMeasure('${tm?.id || ''}')">Maße für ${shortDate(S.day)} speichern</button></div>`;
-  if (ms.length){
-    const first = k => ms.find(m => m.data[k]), latest = k => ms.slice().reverse().find(m => m.data[k]);
-    h += `<div class="sec" style="margin-top:12px"><div style="overflow-x:auto"><table class="m"><thead><tr><th>Maß</th><th>Start</th><th>Aktuell</th><th>Differenz</th></tr></thead><tbody>${MEAS.map(([k, l]) => {
-      const a = first(k), b = latest(k); if (!a) return '';
-      const d = num(b.data[k]) - num(a.data[k]);
-      return `<tr><td>${l}</td><td>${fmt1(a.data[k])}<div class="small muted">${shortDate(a.day)}</div></td><td>${fmt1(b.data[k])}<div class="small muted">${shortDate(b.day)}</div></td><td>${d > 0 ? '+' : ''}${fmt1(d)}</td></tr>`; }).join('')}</tbody></table></div></div>`;
-  } else if (hideM) h += privNote('die Körpermaße');
-  else if (!mine) h += '<div class="note">Noch keine Maße eingetragen.</div>';
+  if (hideM) return h + privNote('die Körpermaße');
+  const latest = ms.at(-1);
+  h += `<div class="list" style="margin-top:12px"><div class="row lhead"><h3 class="grow">Maße</h3>${latest ? `<span class="small muted">${relDays(latest.day)}</span>` : ''}${mine ? `<button class="iconbtn" aria-label="Maße eintragen" onclick="openMeasure()">${I_PLUS}</button>` : ''}</div>`;
+  const rows = MEAS.map(([k, l]) => {
+    const all = ms.filter(m => m.data[k]); if (!all.length) return '';
+    const cur = all.at(-1), prev = all.at(-2), d = prev ? num(cur.data[k]) - num(prev.data[k]) : null;
+    return `<div class="row mrow2"><div class="grow t">${l}</div><div><b class="num n20">${fmt1(cur.data[k])}</b><span class="unit">cm</span></div><div class="mdiff">${d === null ? '' : (d > 0 ? '+' : d < 0 ? '−' : '±') + fmt1(Math.abs(d))}</div></div>`;
+  }).join('');
+  h += rows || `<div class="row"><span class="s muted">${mine ? 'Noch keine Maße. Tippe auf +, z. B. alle zwei Wochen.' : 'Noch keine Maße eingetragen.'}</span></div>`;
   return h + '</div>';
+}
+function openWeight(){
+  q('weight', S.user.id, S.day, S.day).then(r => { const tw = r[0];
+    openSheet(`<div class="sh-head"><h3>Gewicht ${dayLabel(S.day) === 'Heute' ? 'heute' : 'am ' + shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+      <label class="f"><span>In kg, morgens nüchtern</span><input id="wkg" inputmode="decimal" placeholder="kg" value="${tw ? String(tw.data.kg).replace('.', ',') : ''}"></label>
+      <div class="btns"><button class="btn accent full" onclick="saveWeight('${tw?.id || ''}')">Speichern</button></div>`);
+    setTimeout(() => $('#wkg')?.focus(), 50); }).catch(() => toast('Laden fehlgeschlagen'));
+}
+function openMeasure(){
+  q('measure', S.user.id, S.day, S.day).then(r => { const tm = r[0];
+    openSheet(`<div class="sh-head"><h3>Maße am ${shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+      <p class="small muted" style="margin-top:0">In cm. Leere Felder werden übersprungen.</p><div class="grid2">${MEAS.map(([k, l]) => `<label class="f"><span>${l}</span><input id="m_${k}" inputmode="decimal" value="${tm?.data[k] ? String(tm.data[k]).replace('.', ',') : ''}"></label>`).join('')}</div>
+      <div class="btns"><button class="btn accent full" onclick="saveMeasure('${tm?.id || ''}')">Speichern</button></div>`); }).catch(() => toast('Laden fehlgeschlagen'));
 }
 const saveWeight = run(async id => {
   const kg = num($('#wkg').value); if (kg < 30 || kg > 300) return toast('Bitte ein gültiges Gewicht eingeben');
   if (id) await upd(id, { kg }); else await add('weight', S.day, { kg });
-  toast('Gewicht gespeichert'); render();
+  closeSheet(); toast('Gewicht gespeichert'); render();
 });
 const saveMeasure = run(async id => {
   const data = {}; MEAS.forEach(([k]) => { const v = num($('#m_' + k).value); if (v) data[k] = v; });
   if (!Object.keys(data).length) return toast('Bitte mindestens ein Maß eintragen');
   if (id) await upd(id, data); else await add('measure', S.day, data);
-  toast('Maße gespeichert'); render();
+  closeSheet(); toast('Maße gespeichert'); render();
 });
 
 /* ================= Profil & Rechner ================= */
