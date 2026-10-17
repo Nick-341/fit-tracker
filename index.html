@@ -141,6 +141,34 @@ button.row:last-child{border-bottom:0}
 .pexp{margin-top:8px}
 .pexp .hero{border:2px solid var(--partner)}
 
+/* Essen */
+.eboard{display:flex;gap:16px;align-items:flex-end;padding:16px 20px}
+.emac{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-width:0}
+.emac .unit{font-size:12px}
+.meals{margin-top:12px}
+.meal{border-bottom:1px solid var(--line)}
+.meal:last-child{border-bottom:0}
+.mrow{display:flex;align-items:center;gap:8px;padding:0 12px 0 0;min-height:72px}
+.meal.empty .mrow{min-height:56px}
+.mhead{flex:1;min-width:0;display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;text-align:left;padding:12px 0 12px 16px;align-self:stretch}
+.mhead .grow{flex:1;min-width:0;display:flex;flex-direction:column}
+.mname{font-size:17px;font-weight:900;font-stretch:112%;line-height:1.2}
+.meal.empty .mname{color:var(--muted)}
+.mitems{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.mk span{font-size:13px;color:var(--muted);margin-top:4px}
+.mplus{flex:none;width:44px;height:44px;border-radius:var(--r-btn);border:0;background:var(--soft);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.mexp{margin:0 12px 12px;background:var(--bg);border-radius:var(--r-btn);padding:4px 0;overflow:hidden}
+.mexp .row{border-bottom:0;padding:8px 12px}
+.mexp .btns{padding:0 12px}
+.mshare{display:flex;align-items:center;gap:8px;margin:0 12px 12px;background:var(--partner-bg);border-radius:var(--r-btn);padding:12px;font-size:14px}
+.mshare .grow{flex:1;min-width:0}
+.mshare .btn{background:var(--surface);color:var(--ink)}
+.fbar{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:4;display:flex;gap:8px;max-width:528px;margin:0 auto}
+.fsearch{flex:1;display:flex;align-items:center;gap:12px;min-height:52px;border:2px solid var(--line);border-radius:var(--r-card);background:var(--surface);color:var(--muted);font-weight:600;padding:0 16px;box-shadow:0 8px 24px rgba(0,0,0,.12);text-align:left}
+.fscan{flex:none;width:52px;height:52px;border:0;border-radius:var(--r-card);background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
 .sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
@@ -401,7 +429,7 @@ const addN = (a, b) => ({kcal: a.kcal + (+b.kcal||0), p: a.p + (+b.p||0), c: a.c
 const ZERO = {kcal:0, p:0, c:0, f:0};
 const sum = logs => logs.reduce((a, l) => addN(a, l.data), ZERO);
 const roundN = v => ({kcal: r0(v.kcal), p: r1(v.p), c: r1(v.c), f: r1(v.f)});
-const recipeTotals = (r, factor = 1) => (r.items || []).reduce((a, i) => addN(a, scale(i.per, i.grams * factor)), ZERO);
+const recipeTotals = (r, factor = 1) => (r.items || r.data?.items || []).reduce((a, i) => addN(a, scale(i.per, i.grams * factor)), ZERO); // Vorlage als Eintrag oder als Daten
 
 /* ================= Supabase & Zustand ================= */
 const cfg = window.APP_CONFIG || {};
@@ -657,6 +685,7 @@ async function render(){
     const html = await ({ heute:rHeute, essen:rEssen, training:rTraining, koerper:rKoerper, profil:rProfil })[S.tab]();
     if (t !== RT) return;
     v.innerHTML = html; v.dataset.tab = S.tab;
+    document.body.classList.toggle('fixbar', !!v.querySelector('.fbar'));
     v.style.setProperty('--c', own() ? 'var(--mine)' : 'var(--partner)');
     if (S.tab === 'profil') calcUpdate();
   } catch (e) {
@@ -1064,7 +1093,7 @@ const doCopy = run(async () => {
 let EN = null;
 function openEntry(id){
   const l = S.logIdx?.[id]; if (!l) return;
-  EN = { l, day: S.day, slot: l.data.slot || 'snack', grams: l.data.grams || 0 };
+  EN = { l, day: S.day, slot: l.data.slot || 'snack', grams: l.data.grams || 0 }; S.openSlot = EN.slot;
   drawEntry();
 }
 function drawEntry(){
@@ -1237,38 +1266,59 @@ function drawShare(){
 const acceptShare = run(async () => {
   const sel = SH.items.filter(d => d.use);
   await addMany('log', sel.map(d => { const { use, ...rest } = d; return { day: SH.day, data: { ...rest, slot: SH.slot, from_share: SH.s.id, ...(d.grams && d.per ? { grams: r0(d.grams * SH.f) } : { factor: r1((rest.factor || 1) * SH.f) }), ...shItem(d) } }; }));
-  await add('shareack', today(), { ref: SH.s.id, action: 'accept' });
+  await add('shareack', today(), { ref: SH.s.id, action: 'accept' }); S.openSlot = SH.slot;
   closeSheet(); toast(sel.length === 1 ? 'Übernommen' : sel.length + ' Einträge übernommen'); render();
 });
 const ackShare = run(async (id, action) => { if (action === 'reject' && !confirm('Mahlzeit ablehnen?')) return; await add('shareack', today(), { ref: id, action }); render(); });
 
 /* ================= Essen ================= */
+const ICON = d => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I_PLUS = ICON('<path d="M12 5v14M5 12h14"/>');
+const I_SEARCH = ICON('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>');
+const I_SCAN = ICON('<path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/>');
+function slotNow(){ const h = new Date().getHours(); return h < 11 ? 'fruehstueck' : h < 15 ? 'mittag' : h < 18 ? 'snack' : h < 22 ? 'abend' : 'snack'; }
+function toggleSlot(k){ S.openSlot = S.openSlot === k ? null : k; render(); }
+function openFoodSearch(scan){
+  const slot = S.openSlot || slotNow();
+  openPicker({ mode:'log', slot, title: slotName(slot), tab: scan ? 'scan' : 'suche' });
+  if (!scan) setTimeout(() => $('#pq')?.focus(), 50);
+}
 async function rEssen(){
   const uid = viewId(), mine = own(), p = mine ? S.me : S.partner;
   if (!mine && !shares(p, 'nutrition')) return privNote('die Ernährung');
   const [logs, wos] = await Promise.all([ q('log', uid, S.day, S.day), q('workout', uid, S.day, S.day) ]);
   await loadRecipes();
   S.logIdx = Object.fromEntries(logs.map(l => [l.id, l]));
-  const tot = sum(logs), tgt = targetFor(p, S.day, wos.length > 0);
+  const tot = sum(logs), tgt = targetFor(p, S.day, wos.length > 0), left = tgt ? tgt.kcal - tot.kcal : 0;
   const inbox = mine ? await pendingShares() : [];
-  let h = shareCards(inbox) + `<div class="card"><div class="big" style="font-size:40px">${fmt(tot.kcal)}<small>${tgt ? `von ${fmt(tgt.kcal)} kcal` : 'kcal'}</small></div>
-    <div class="small muted">Protein ${fmt(tot.p)}${tgt ? '/' + tgt.p : ''} g, Kohlenhydrate ${fmt(tot.c)}${tgt ? '/' + tgt.c : ''} g, Fett ${fmt(tot.f)}${tgt ? '/' + tgt.f : ''} g</div>${mine ? `<div class="btns" style="margin-top:12px"><button class="btn sm ghost" onclick="openCopy()">Essen von anderem Tag kopieren</button></div>` : ''}</div>`;
-  h += '<div class="sec"><div class="list">';
+  const mini = (lbl, v, g) => `<div><div class="lbl">${lbl}</div><div style="margin-top:4px;white-space:nowrap"><b class="num n20">${fmt(v)}</b>${g ? `<span class="unit">/${fmt(g)}</span>` : ''}</div><div class="track t4 ${g && v > g * 1.1 ? 'over' : ''}"><i style="width:${g ? Math.min(100, v / g * 100) : 0}%"></i></div></div>`;
+  let h = `<div class="board eboard"><div><div class="lbl">${!tgt ? 'kcal heute' : left < 0 ? 'kcal drüber' : 'kcal übrig'}</div><div class="num n54" style="margin-top:8px">${tgt ? (left < 0 ? '+' + fmt(-left) : fmt(left)) : fmt(tot.kcal)}</div></div>
+    <div class="emac">${mini('Protein', tot.p, tgt?.p)}${mini('Carbs', tot.c, tgt?.c)}${mini('Fett', tot.f, tgt?.f)}</div></div>`;
+  h += '<div class="list meals">';
   for (const [k, label] of SLOTS){
-    const items = logs.filter(l => (l.data.slot || 'snack') === k);
-    const st = sum(items);
-    h += `<div class="slot-h"><span>${label}</span><span class="slot-r">${mine && S.partner && items.length ? `<button class="sendbtn" onclick="sendSlot('${k}')">An ${esc(nameOf(S.partner).split(' ')[0])}</button>` : ''}${fmt(st.kcal)} kcal</span></div>`;
-    h += items.map(l => `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openEntry('${l.id}')"` : ''}><div class="grow"><div class="t">${esc(l.data.name)}${l.pending ? ' <span class="pend" title="Wartet auf Upload">⇡</span>' : ''}</div><div class="s">${l.data.grams ? fmt(l.data.grams) + ' g, ' : ''}${l.data.factor && l.data.factor !== 1 ? '×' + String(l.data.factor).replace('.', ',') + ', ' : ''}P ${fmt(l.data.p)} / KH ${fmt(l.data.c)} / F ${fmt(l.data.f)}</div></div><div class="k">${fmt(l.data.kcal)}</div>${mine ? `<button class="iconbtn" aria-label="Eintrag löschen" onclick="event.stopPropagation();delLog('${l.id}')">×</button>` : ''}</div>`).join('');
-    if (mine) h += `<div class="row"><button class="btn sm ghost" onclick="openPicker({mode:'log',slot:'${k}',title:'${label}'})">+ Hinzufügen</button></div>`;
-    else if (!items.length) h += `<div class="row s muted">Nichts eingetragen</div>`;
+    const items = logs.filter(l => (l.data.slot || 'snack') === k), st = sum(items);
+    const open = S.openSlot === k && items.length > 0;
+    const sh = inbox.filter(s => (s.data.slot || 'snack') === k);
+    h += `<div class="meal ${open ? 'open' : ''} ${items.length ? '' : 'empty'}"><div class="mrow">
+      <button class="mhead" ${items.length ? `onclick="toggleSlot('${k}')" aria-expanded="${open}"` : (mine ? `onclick="openPicker({mode:'log',slot:'${k}',title:'${label}'})"` : 'disabled')}>
+        <span class="grow"><span class="mname">${label}</span>${items.length ? `<span class="mitems">${open ? `${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}` : esc(items.map(l => l.data.name).join(', '))}</span>` : ''}</span>
+        ${items.length ? `<span class="mk"><b class="num n24">${fmt(st.kcal)}</b><span>${fmt(st.p)} g P</span></span>` : ''}</button>
+      ${mine ? `<button class="mplus" aria-label="Zu ${label} hinzufügen" onclick="openPicker({mode:'log',slot:'${k}',title:'${label}'})">${I_PLUS}</button>` : ''}</div>
+      ${sh.map(s => `<div class="mshare"><span class="pdot"></span><span class="grow"><b>${esc(nameOf(S.partner).split(' ')[0])} schlägt vor:</b> ${esc(s.data.items.map(d => d.name).join(', '))} · ${fmt(sum(s.data.items.map(d => ({ data: d }))).kcal)} kcal${s.day !== S.day ? ', ' + dayLabel(s.day) : ''}</span>
+        <button class="btn sm" onclick="openShare('${s.id}')">Übernehmen</button><button class="iconbtn" aria-label="Vorschlag ablehnen" onclick="ackShare('${s.id}','reject')">×</button></div>`).join('')}
+      ${open ? `<div class="mexp">${items.map(l => `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openEntry('${l.id}')"` : ''}><div class="grow"><div class="t">${esc(l.data.name)}${l.pending ? ' <span class="pend" title="Wartet auf Upload">⇡</span>' : ''}</div><div class="s">${l.data.recipe_id ? 'Rezept · ' : ''}${l.data.grams ? fmt(l.data.grams) + ' g · ' : ''}${l.data.factor && l.data.factor !== 1 ? '×' + String(l.data.factor).replace('.', ',') + ' · ' : ''}P ${fmt(l.data.p)} / KH ${fmt(l.data.c)} / F ${fmt(l.data.f)}</div></div><b class="num n20">${fmt(l.data.kcal)}</b>${mine ? `<button class="iconbtn" aria-label="Eintrag löschen" onclick="event.stopPropagation();delLog('${l.id}')">×</button>` : ''}</div>`).join('')}
+        ${mine && S.partner ? `<div class="btns" style="margin:8px 0 4px"><button class="sendbtn" onclick="sendSlot('${k}')">${label} an ${esc(nameOf(S.partner).split(' ')[0])} schicken</button></div>` : ''}</div>` : ''}</div>`;
   }
-  h += '</div></div>';
+  h += '</div>';
+  if (mine) h += `<div class="list" style="margin-top:12px"><button class="row tap" onclick="openCopy()"><div class="grow"><div class="t">Essen von anderem Tag kopieren</div><div class="s">Ganze Mahlzeiten übernehmen, z. B. von gestern</div></div><span class="chev">${CHEV}</span></button></div>`;
   const recs = Object.values(S.rc).filter(r => r.user_id === uid);
   h += `<div class="sec"><div class="sec-h"><h2>Mahlzeiten-Vorlagen</h2>${mine ? `<button class="btn sm" onclick="openRecipe()">Neue Vorlage</button>` : ''}</div>`;
   if (!recs.length) h += `<div class="note">${mine ? 'Vorlagen sind Mahlzeiten, die du öfter isst. Weise sie Wochentagen zu, dann erscheinen sie unter Heute zum Abhaken.' : 'Noch keine Vorlagen.'}</div>`;
   else h += '<div class="list">' + recs.map(r => { const t = recipeTotals(r, r.data.factor || 1);
-    return `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openRecipe('${r.id}')"` : ''}><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${slotName(r.data.slot)}, ${(r.data.days || []).length ? r.data.days.map(d => WD[d]).join(' ') : 'kein Tag geplant'}</div></div><div class="k">${fmt(t.kcal)} kcal</div></div>`; }).join('') + '</div>';
-  return h + '</div>';
+    return `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openRecipe('${r.id}')"` : ''}><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${slotName(r.data.slot)} · ${(r.data.days || []).length ? r.data.days.map(d => WD[d]).join(' ') : 'kein Tag geplant'}</div></div><div class="k">${fmt(t.kcal)} kcal</div></div>`; }).join('') + '</div>';
+  h += '</div>';
+  if (mine) h += `<div class="fbar"><button class="fsearch" onclick="openFoodSearch(false)">${I_SEARCH}<span>Lebensmittel suchen</span></button><button class="fscan" aria-label="Barcode scannen" onclick="openFoodSearch(true)">${I_SCAN}</button></div>`;
+  return h;
 }
 const delLog = run(async id => { await del(id); render(); });
 
@@ -1276,6 +1326,7 @@ const delLog = run(async id => { await del(id); render(); });
 let P = null;
 async function openPicker(opts){
   P = { tab:'suche', results:[], lib:null, basket:[], ...opts };
+  if (P.mode === 'log' && P.slot) S.openSlot = P.slot;
   drawPicker();
   P.lib = await loadLib(); if (P.tab === 'suche' && !P.results.length) showResults(P.lib.slice(0, 30), 'Eigene und zuletzt verwendete');
 }

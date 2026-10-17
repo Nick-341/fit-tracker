@@ -66,7 +66,7 @@ def close(pg): pg.evaluate('closeSheet()'); pg.wait_for_timeout(150)
 def bottom_free(pg, name):
     # Ganz nach unten scrollen: Das letzte Element der Ansicht muss über der Tab-Leiste enden.
     pg.evaluate('window.scrollTo(0, 1e6)'); pg.wait_for_timeout(150)
-    r = pg.evaluate("(()=>{const v=document.querySelector('#view').lastElementChild.getBoundingClientRect();const t=document.querySelector('.tabs-in').getBoundingClientRect();return [v.bottom,t.top]})()")
+    r = pg.evaluate("(()=>{const els=[...document.querySelector('#view').children].filter(e=>getComputedStyle(e).position!=='fixed');const v=els.at(-1).getBoundingClientRect();const t=[...document.querySelectorAll('.tabs-in,.fbar')].map(e=>e.getBoundingClientRect().top);return [v.bottom,Math.min(...t)]})()")
     check(r[0] <= r[1] + 1, f'{name}: Tab-Leiste verdeckt nichts')
     pg.evaluate('window.scrollTo(0, 0)')
 
@@ -119,7 +119,11 @@ def flow_heute_faelle(ctx):
 def flow_essen_korb(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(500)
-    pg.click('text=+ Hinzufügen >> nth=0'); pg.wait_for_timeout(600)
+    shot(pg, 'essen'); bottom_free(pg, 'Essen')
+    check(pg.query_selector('.fbar .fscan') is not None, 'Suche und Scan unten')
+    check(pg.query_selector('.mshare >> text=Übernehmen') is not None, 'Vorschlag sitzt in der Mahlzeit')
+    check('0 kcal' != pg.inner_text('.sec .list .row .k >> nth=0').strip(), 'Vorlage zeigt Kalorien')
+    pg.click('.mplus >> nth=0'); pg.wait_for_timeout(600)
     pg.click('#pres .row.tap >> nth=0'); pg.click('#pres .row.tap >> nth=1'); pg.wait_for_timeout(200)
     check(pg.query_selector('.bbar') is not None, 'Korbleiste erscheint')
     pg.click('text=Prüfen und speichern'); pg.wait_for_timeout(300); shot(pg, 'essen_korb')
@@ -129,7 +133,8 @@ def flow_essen_korb(ctx):
     pg.select_option('.slotsel >> nth=0', 'abend'); pg.wait_for_timeout(150); shot(pg, 'essen_kopieren')
     pg.click('text=Auf heute kopieren'); pg.wait_for_timeout(500)
     check('kopiert' in toast(pg), 'Kopieren mit Ziel-Mahlzeit')
-    pg.click('#view .row.tap >> nth=0'); pg.wait_for_timeout(300); shot(pg, 'essen_eintrag')
+    check(pg.query_selector('.meal.open') is not None, 'Bearbeitete Mahlzeit ist aufgeklappt')
+    pg.click('.mexp .row.tap >> nth=0'); pg.wait_for_timeout(300); shot(pg, 'essen_eintrag')
     check(pg.query_selector('text=Kopieren oder verschieben') is not None, 'Eintrag-Aktionen öffnen')
     close(pg); return pg
 
@@ -141,6 +146,7 @@ def flow_essen_teilen(ctx):
     check('übernommen' in toast(pg), 'Mahlzeit übernommen')
     check(pg.query_selector('.sharein') is None, 'Vorschlag verschwindet danach')
     pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(500)
+    if not pg.query_selector('.sendbtn'): pg.click('.mhead >> nth=0'); pg.wait_for_timeout(300)
     pg.click('.sendbtn >> nth=0'); pg.wait_for_timeout(400)
     check('geschickt' in toast(pg), 'Mahlzeit an Partner schicken')
     return pg
