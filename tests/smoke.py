@@ -18,10 +18,16 @@ def check(cond, msg):
         print('  ✓', msg)
 
 def syntax_check():
-    if not shutil.which('node'):
-        print('Node nicht gefunden, Syntaxprüfung übersprungen'); return
     html = (ROOT / 'index.html').read_text(encoding='utf-8')
     js = re.findall(r'<script>(.*?)</script>', html, re.S)[-1]
+    if not shutil.which('node'):
+        # Ohne Node: Chromium kompiliert das Script, ohne es auszuführen.
+        with sync_playwright() as p:
+            b = p.chromium.launch(); pg = b.new_page()
+            err = pg.evaluate('js => { try { new Function(js); return ""; } catch (e) { return String(e); } }', js)
+            b.close()
+        check(not err, 'JavaScript-Syntax' + (': ' + err[:300] if err else ''))
+        return
     with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
         f.write(js); path = f.name
     r = subprocess.run(['node', '--check', path], capture_output=True, text=True)

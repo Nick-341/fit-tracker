@@ -24,13 +24,30 @@ CSS-Variablen in `:root`. Dunkelmodus über `prefers-color-scheme` und `:root[da
 | `--mine` | #C98200 | #FFB81C | eigene Daten (Linien, Text auf hellem Grund) |
 | `--partner` | #0A84C6 | #5CC8FF | Daten des Partners |
 | `--warn` | #C0341D | #FF8A7A | Überschreitung, Löschen |
+| `--board` | #15181C | #0B0D10 | Anzeigetafel (`.board`), auch im Hellmodus dunkel |
+| `--board-soft` | #2E343B | #262B32 | Balken-Hintergrund, Trennlinien, Segment auf der Tafel |
+| `--board-ink` | #F2F3F0 | #F2F3F0 | Text auf der Tafel |
+| `--board-muted` | #A2AAB2 | #A2AAB2 | Nebentext und `.lbl` auf der Tafel |
+| `--partner-bg` | #E3F1FA | #1C2E3A | Flächen mit Partnerbezug (z. B. Mahlzeitvorschlag) |
+| `--hint` | #FFF1CC | #3A311C | Hinweisleiste (`.hintbar`) |
+| `--pad` | #FFFFFF | #1B1F24 | Eingabefelder und Zahlenfeld |
 
 Neue Farben nur mit Werten für beide Modi. Nie Text in `--accent` auf hellem Grund (Kontrast), stattdessen `--mine`. Weißer Text auf blauen Flächen nur auf #076A9F.
 
 ## Schrift
-Archivo (variabel). Überschriften: `font-weight:900; font-stretch:112%`. Große Zahlen: Klasse `num` (900, 90 %). Fließtext 15–16 px, Nebentext 13 px.
+Archivo (variabel). Überschriften: `font-weight:900; font-stretch:112%`. Fließtext 15–16 px, Nebentext 13 px.
+- `.num`: 900, `font-stretch:90%`, `tabular-nums`. Größen-Klassen `.n108 .n96 .n54 .n44 .n40` (line-height .8), `.n36 .n28 .n24 .n20`. Einheit dahinter als `<span class="unit">kg</span>`.
+- Tafel-Hauptzahl 88–108 px · Kachelzahl 40–44 px · Inline-Zahl 20–28 px.
+- `.lbl`: 11 px, 800, `letter-spacing:.12em`, Versalien, `--muted` (auf `.board` automatisch `--board-muted`).
+- **Alle Zahlen mit `tabular-nums`** (ist auf `body` gesetzt, nicht überschreiben).
+
+## Maße
+- Radien (Variablen): `--r-board` 24 · `--r-card` 20 (Karten, Listen) · `--r-btn` 14 (Buttons, Felder) · `--r-sm` 10 (klein).
+- Abstände nur 4 / 8 / 12 / 16 / 24 px.
 
 ## Bausteine (vorhandene Klassen wiederverwenden)
+- Anzeigetafel: `.board` (Radius 24, Padding 20, Hintergrund `--board`). Darin `.track` automatisch auf `--board-soft` mit gelber Füllung, `.track.over` rot, `<hr>` als Trennlinie. Balken: `.track.t10` (Hauptbalken), `.track.t4` (Makros).
+- Hinweise: `.hintbar` (gebündelte Hinweise, Hintergrund `--hint`)
 - Container: `.card`, `.list` mit `.row` (`.grow`, `.t`, `.s`, `.k`), `.note`, `.sec` + `.sec-h`
 - Heute: `.hero` (Ring + Makrobalken), `.tiles`/`.tile` (`.done` = erledigt, gelb), `.prow` (Partnerzeile), `.sharein`, `.kudosin`
 - Buttons: `.btn` (primär), `.btn.accent` (Hauptaktion, höchstens eine pro Ansicht), `.btn.ghost`, `.btn.line`, `.btn.danger`, `.btn.sm`, `.iconbtn`, `.plus`, `.dashed`
@@ -40,6 +57,10 @@ Archivo (variabel). Überschriften: `font-weight:900; font-stretch:112%`. Große
 - Rückmeldung: `toast('…')`
 
 ## Regeln
+- **Große Zahl = Restwert oder Trend, nie Rohwert** (kcal übrig statt gegessen, Ø 7 Tage statt Tageswiegung).
+- **Gelb nur für Fortschritt, Erledigtes und die eine Hauptaktion.** Keine gelben Deko-Flächen.
+- **Hinweise bündeln statt Karten stapeln** (eine `.hintbar` statt mehrerer Karten).
+- Pro Ansicht höchstens eine `.board`, immer oben.
 - Tippflächen mindestens 44 px hoch (`.btn.sm` mit 36 px nur für Nebenaktionen).
 - iPhone-Safe-Area berücksichtigen (`env(safe-area-inset-*)`), die Tab-Leiste schwebt unten.
 - Pro Ansicht genau eine Hauptaktion in Akzentfarbe.
