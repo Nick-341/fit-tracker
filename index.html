@@ -226,6 +226,18 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .tbtn{border:0;background:none;color:var(--muted);font-weight:700;font-size:14px;min-height:44px;padding:0 4px}
 .tbtn.warn{color:var(--warn)}
 
+/* Training-Übersicht */
+.tbig{font-size:40px;font-weight:900;font-stretch:112%;line-height:1;margin-top:16px;overflow-wrap:anywhere}
+.bbtns{display:flex;gap:8px}
+.btn.bsoft{background:var(--board-soft);color:var(--board-ink)}
+.trow{display:flex;align-items:center;gap:8px;min-height:60px;padding:0 12px 0 0;border-bottom:1px solid var(--line)}
+.trow:last-child{border-bottom:0}
+.tinfo{flex:1;min-width:0;display:flex;flex-direction:column;border:0;background:none;color:inherit;text-align:left;padding:8px 0 8px 16px;align-self:stretch;justify-content:center}
+.tinfo .t{font-weight:900;font-stretch:112%;font-size:17px}
+.tinfo .s{font-size:13px;color:var(--muted)}
+.trow2 .t{font-weight:900;font-stretch:112%}
+.best{color:var(--mine);font-weight:800}
+
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
 .sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
@@ -1666,33 +1678,65 @@ function nextRoutine(routines, wos){
   return routines.map((r, i) => ({ r, i, last: lastTrained(r, wos) }))
     .sort((a, b) => (a.last || '') < (b.last || '') ? -1 : (a.last || '') > (b.last || '') ? 1 : a.i - b.i)[0];
 }
+const I_PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>';
+// Bestwerte je Einheit wie im Level-System: geschätztes 1RM über dem bisherigen Bestwert der Übung
+function prCounts(wos){
+  const best = {}, out = {};
+  wos.forEach(w => { let pr = 0;
+    (w.data.exercises || []).forEach(e => { const k = (e.name || '').toLowerCase().trim();
+      const top = Math.max(0, ...e.sets.map(s => num(s.kg) * (1 + num(s.reps) / 30))); if (!k || top <= 0) return;
+      if (best[k] !== undefined && top > best[k] + 0.01) pr++; best[k] = Math.max(best[k] ?? 0, top); });
+    out[w.id] = Math.min(pr, 3); });
+  return out;
+}
 async function rTraining(){
   const uid = viewId(), mine = own();
   if (!mine && !shares(S.partner, 'training')) return privNote('das Training');
-  const [routines, wos, kd] = await Promise.all([ q('routine', uid), q('workout', uid, addDays(S.day, -42), S.day), S.partner ? kudosFor(mine ? S.partner.id : S.user.id, addDays(S.day, -42), S.day) : [] ]);
+  const [routines, wos, kd] = await Promise.all([ q('routine', uid), q('workout', uid, addDays(S.day, -180), S.day), S.partner ? kudosFor(mine ? S.partner.id : S.user.id, addDays(S.day, -42), S.day) : [] ]);
   S.rt = {}; routines.forEach(r => S.rt[r.id] = r);
+  S.wos = Object.fromEntries(wos.map(w => [w.id, w])); S.kd = kd;
   if (mine){ const seen = new Set(); S.exNames = []; [...routines.flatMap(r => r.data.exercises.map(e => e.name)), ...wos.slice().reverse().flatMap(w => w.data.exercises.map(e => e.name))].forEach(n => { const k = n.toLowerCase(); if (!seen.has(k)){ seen.add(k); S.exNames.push(n); } }); }
   let h = '';
   const dr = mine ? getDraft() : null;
-  if (dr && !sheetOpen()) h += `<div class="draft"><div><b>Nicht gespeicherte Einheit</b><div class="small">${esc(dr.w.name)}, ${dayLabel(dr.w.day)}, ${(n => n === 1 ? '1 Satz' : n + ' Sätze')(dr.w.exercises.reduce((a, e) => a + e.sets.filter(s => num(s.reps)).length, 0))} eingetragen</div></div><div class="btns" style="margin-top:10px"><button class="btn" style="flex:1" onclick="resumeDraft()">Fortsetzen</button><button class="btn line" onclick="dropDraft()">Verwerfen</button></div></div>`;
-  if (mine){
-    h += `<div class="sec-h"><h2>Trainingstage</h2><button class="btn sm" onclick="openRoutine()">Neuer Trainingstag</button></div>`;
-    h += routines.length ? '<div class="list">' + routines.map(r => `<div class="row"><div class="grow tap" onclick="openRoutine('${r.id}')"><div class="t">${esc(r.data.name)}</div><div class="s">${r.data.exercises.length} Übungen, bearbeiten</div></div><button class="btn sm accent" onclick="startWorkout('${r.id}')">Starten</button></div>`).join('') + '</div>'
-      : '<div class="note">Lege deine Trainingstage an, z. B. Push, Pull, Beine. Beim Starten sind die Übungen dann schon eingetragen.</div>';
-    h += `<div class="btns"><button class="btn line" onclick="startWorkout()">Freies Training starten</button></div>`;
-  } else {
-    h += `<h2>Trainingstage</h2><div class="sec">${routines.length ? '<div class="list">' + routines.map(r => `<div class="row"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${r.data.exercises.map(e => esc(e.name)).join(', ')}</div></div></div>`).join('') + '</div>' : '<div class="note">Noch keine Trainingstage angelegt.</div>'}</div>`;
+  if (dr && !sheetOpen()){
+    const n = dr.w.exercises.reduce((a, e) => a + e.sets.filter(s => num(s.reps)).length, 0);
+    h += `<div class="board"><div class="bhead"><span class="lbl">Nicht gespeicherte Einheit</span><span class="small muted">${dayLabel(dr.w.day)}</span></div>
+      <div class="tbig">${esc(dr.w.name)}</div><p class="small muted" style="margin:8px 0 16px">${n === 1 ? '1 Satz' : n + ' Sätze'} eingetragen</p>
+      <div class="bbtns"><button class="btn accent" style="flex:1" onclick="resumeDraft()">Fortsetzen</button><button class="btn bsoft" onclick="dropDraft()">Verwerfen</button></div></div>`;
+  } else if (mine){
+    const nx = nextRoutine(routines, wos);
+    h += nx ? `<div class="board"><div class="bhead"><span class="lbl">Als Nächstes</span><span class="small muted">${nx.last ? 'zuletzt ' + relDays(nx.last) : 'noch nie trainiert'}</span></div>
+      <div class="tbig">${esc(nx.r.data.name)}</div><p class="small muted" style="margin:8px 0 16px">${nx.r.data.exercises.map(e => esc(e.name)).join(', ')}</p>
+      <div class="bbtns"><button class="btn accent big" style="flex:1" onclick="startWorkout('${nx.r.id}')">${I_PLAY} Starten</button><button class="btn bsoft big" onclick="openOther()">Anderes</button></div></div>`
+      : `<div class="board"><div class="lbl">Los geht's</div><div class="tbig">Freies Training</div><p class="small muted" style="margin:8px 0 16px">Lege unten Trainingstage an, dann schlägt Spotter dir immer den nächsten vor.</p>
+      <div class="bbtns"><button class="btn accent big" style="flex:1" onclick="startWorkout()">${I_PLAY} Starten</button></div></div>`;
   }
-  h += `<div class="sec"><div class="sec-h"><h2>Verlauf</h2><button class="btn sm ghost" onclick="openProgress()">Übungsfortschritt</button></div><p class="small muted" style="margin:-4px 0 10px">6 Wochen bis ${shortDate(S.day)}</p>`;
-  h += wos.length ? wos.slice().reverse().map(w => {
-    const vol = w.data.exercises.reduce((a, e) => a + e.sets.reduce((b, s) => b + num(s.kg) * num(s.reps), 0), 0);
-    return `<details class="wo" ${w.day === S.day ? 'open' : ''}><summary><span><b>${esc(w.data.name)}</b> <span class="muted small">${dayLabel(w.day)}</span></span><span class="muted small">${fmt(vol)} kg Volumen</span></summary><div class="body">
-      ${w.data.exercises.map(e => `<p><b>${esc(e.name)}</b>: ${e.sets.map(s => `${fmt1(num(s.kg)).replace(',0', '')}×${s.reps}`).join(', ')}</p>`).join('')}
-      ${w.data.note ? `<p class="muted">${esc(w.data.note)}</p>` : ''}
-      ${mine && kd.some(k => k.data.key === 'wo:' + w.id) ? `<div class="kudosin" style="margin:8px 0 0">${KUDOS_ICON}<span>Kudos von <b>${esc(nameOf(S.partner))}</b></span></div>` : ''}
-      <div class="btns">${mine ? `<button class="btn sm ghost" onclick="editWorkout('${w.id}')">Bearbeiten</button>` : kudosBtn('wo:' + w.id, w.day, kd.some(k => k.data.key === 'wo:' + w.id), w.data.name)}</div></div></details>`; }).join('')
-    : '<div class="note">In diesem Zeitraum ist kein Training eingetragen.</div>';
+  h += `<div class="list" style="margin-top:12px"><div class="row lhead"><h3 class="grow">Trainingstage</h3>${mine ? `<button class="iconbtn" aria-label="Neuer Trainingstag" onclick="openRoutine()">${I_PLUS}</button>` : ''}</div>`;
+  h += routines.length ? routines.map(r => { const last = lastTrained(r, wos);
+    return `<div class="trow"><button class="tinfo" ${mine ? `onclick="openRoutine('${r.id}')"` : 'disabled'}><span class="t">${esc(r.data.name)}</span><span class="s">${mine ? `${r.data.exercises.length} Übungen · ${last ? relDays(last) : 'noch nie'}` : r.data.exercises.map(e => esc(e.name)).join(', ')}</span></button>
+      ${mine ? `<button class="qplus" aria-label="${esc(r.data.name)} starten" onclick="startWorkout('${r.id}')">${I_PLAY}</button>` : ''}</div>`; }).join('')
+    : `<div class="row"><span class="s muted">${mine ? 'Lege deine Trainingstage an, z. B. Push, Pull, Beine. Beim Starten sind die Übungen dann schon eingetragen.' : 'Noch keine Trainingstage.'}</span></div>`;
+  h += '</div>';
+  const prs = prCounts(wos), recent = wos.filter(w => daysBetween(w.day, S.day) < 42).reverse();
+  h += `<div class="list" style="margin-top:12px"><div class="row lhead"><h3 class="grow">Letzte Einheiten</h3><button class="tbtn" onclick="openProgress()">Übungsfortschritt</button></div>`;
+  h += recent.length ? recent.map(w => `<button class="row tap trow2" onclick="openWo('${w.id}')"><div class="grow"><div class="t">${esc(w.data.name)}</div><div class="s">${dayLabel(w.day)}${prs[w.id] ? ` · <span class="best">${prs[w.id] === 1 ? '1 Bestwert' : prs[w.id] + ' Bestwerte'}</span>` : ''}${kd.some(k => k.data.key === 'wo:' + w.id) ? ' · Kudos' : ''}</div></div><b class="num n20">${fmt(woVolume(w))} kg</b></button>`).join('')
+    : '<div class="row"><span class="s muted">In den letzten 6 Wochen ist kein Training eingetragen.</span></div>';
   return h + '</div>';
+}
+function openOther(){
+  const list = Object.values(S.rt);
+  openSheet(`<div class="sh-head"><h3>Anderes Training</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <div class="list">${list.map(r => `<button class="row tap" onclick="closeSheet();startWorkout('${r.id}')"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${r.data.exercises.length} Übungen · ca. ${estMinutes(r)} min</div></div><span class="chev">${CHEV}</span></button>`).join('')}
+    <button class="row tap" onclick="closeSheet();startWorkout()"><div class="grow"><div class="t">Freies Training</div><div class="s">Übungen während des Trainings hinzufügen</div></div><span class="chev">${CHEV}</span></button></div>`);
+}
+function openWo(id){
+  const w = S.wos?.[id]; if (!w) return; const mine = w.user_id === S.user.id, kd = S.kd || [];
+  openSheet(`<div class="sh-head"><h3>${esc(w.data.name)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <p class="small muted" style="margin-top:0">${dayLabel(w.day)} · ${fmt(woVolume(w))} kg Volumen</p>
+    <div class="list">${w.data.exercises.map(e => `<div class="row"><div class="grow"><div class="t">${esc(e.name)}</div><div class="s">${e.sets.map(s => `${fmt1(num(s.kg)).replace(',0', '')} × ${s.reps}`).join(' · ')}</div></div></div>`).join('')}</div>
+    ${w.data.note ? `<div class="note" style="margin-top:12px">${esc(w.data.note)}</div>` : ''}
+    ${mine && kd.some(k => k.data.key === 'wo:' + w.id) ? `<div class="kudosin">${KUDOS_ICON}<span>Kudos von <b>${esc(nameOf(S.partner))}</b></span></div>` : ''}
+    <div class="btns">${mine ? `<button class="btn line full" onclick="editWorkout('${w.id}')">Bearbeiten</button>` : kudosBtn('wo:' + w.id, w.day, kd.some(k => k.data.key === 'wo:' + w.id), w.data.name)}</div>`);
 }
 /* ---------- Übungsbibliothek ---------- */
 const EX_LIB = {

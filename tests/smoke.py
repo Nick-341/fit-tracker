@@ -172,8 +172,10 @@ def flow_essen_teilen(ctx):
 
 def flow_training(ctx):
     pg = open_app(ctx)
-    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
-    pg.click('text=Starten'); pg.wait_for_timeout(500)
+    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500); shot(pg, 'training', True)
+    check(pg.inner_text('.board .lbl') .lower() == 'als nächstes', 'Training: Tafel „Als Nächstes“')
+    bottom_free(pg, 'Training')
+    pg.click('.board >> text=Starten'); pg.wait_for_timeout(500)
     pg.fill('.setrow >> nth=0 >> input >> nth=1', '8'); pg.dispatch_event('.setrow >> nth=0 >> input >> nth=1', 'change'); pg.wait_for_timeout(600)
     check(pg.evaluate('TM.end > 0'), 'Auto-Timer startet nach Satz')
     shot(pg, 'training_einheit')
@@ -195,10 +197,24 @@ def flow_training(ctx):
     check('gespeichert' in toast(pg), 'Einheit speichern')
     pg.click('text=Übungsfortschritt'); pg.wait_for_timeout(500); pg.click('#sheetBody .row.tap >> nth=0'); pg.wait_for_timeout(300)
     shot(pg, 'training_fortschritt'); close(pg)
-    pg.click('text=Neuer Trainingstag'); pg.wait_for_timeout(300); pg.click('text=+ Übung hinzufügen'); pg.wait_for_timeout(300)
+    pg.click('.trow2 >> nth=0'); pg.wait_for_timeout(300)
+    check(pg.query_selector('#sheetBody >> text=Bearbeiten') is not None, 'Einheit öffnet Details'); close(pg)
+    pg.click('[aria-label="Neuer Trainingstag"]'); pg.wait_for_timeout(300); pg.click('text=+ Übung hinzufügen'); pg.wait_for_timeout(300)
     pg.click('#liblist .plus >> nth=0'); pg.wait_for_timeout(200); shot(pg, 'training_bibliothek')
     check(pg.query_selector('.presets') is not None, 'Übungsbibliothek mit Vorgaben')
     close(pg); return pg
+
+def flow_dran(ctx):
+    pg = open_app(ctx)
+    # Zwei Trainingstage: B wurde nie trainiert, also ist B dran; nach B ist A wieder dran (am längsten her)
+    pg.evaluate("add('routine', null, {name:'Unterkörper B', exercises:[{name:'Kniebeuge',sets:3,reps:'6-8'}]})"); pg.wait_for_timeout(300)
+    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
+    check(pg.inner_text('.board .tbig') == 'Unterkörper B', 'Dran: nie trainierter Tag zuerst')
+    pg.evaluate("add('workout', today(), {name:'Unterkörper B', exercises:[{name:'Kniebeuge',sets:[{kg:80,reps:8}]}]}).then(render)"); pg.wait_for_timeout(600)
+    check(pg.inner_text('.board .tbig') == 'Oberkörper A', 'Dran: danach der am längsten nicht trainierte')
+    pg.click('#tabs >> text=Heute'); pg.wait_for_timeout(500)
+    check('Unterkörper B' in pg.inner_text('.tile.done'), 'Heute: erledigtes Training mit Volumen')
+    return pg
 
 def flow_partneransicht(ctx):
     pg = open_app(ctx)
@@ -261,7 +277,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_hell_dunkel]
 
 def main():
