@@ -309,13 +309,30 @@ textarea{min-height:120px;resize:vertical}
 .quick button{flex:1}
 
 /* Training */
-.ex{background:var(--surface);border-radius:20px;padding:12px 14px;margin-bottom:10px}
-.ex-h{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-.ex-h input{font-weight:800}
-.last{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
-.setrow{display:grid;grid-template-columns:26px 1fr 14px 1fr 40px 32px;gap:6px;align-items:center;margin-bottom:6px}
-.setrow .n{color:var(--muted);font-weight:800;text-align:center}
-.setrow input{text-align:center;padding:8px 4px;font-weight:700}
+.whead{display:flex;align-items:center;gap:8px}
+.wname{flex:1;min-width:0;border:0;background:none;padding:0;font-size:30px;font-weight:900;font-stretch:112%;min-height:44px}
+.wname:focus{border:0;box-shadow:inset 0 -2px 0 var(--accent)}
+.wmeta{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted);margin-top:4px}
+.wseg{display:flex;gap:4px;margin:8px 0 16px}
+.wseg i{flex:1;height:6px;border-radius:3px;background:var(--soft)}
+.wseg i.done{background:var(--accent)}.wseg i.cur{background:var(--ink)}
+.ex{background:var(--surface);border-radius:var(--r-card);padding:16px;margin-bottom:12px}
+.ex-h{display:flex;gap:8px;align-items:center}
+.exname{border:0;background:none;padding:0;font-size:22px;font-weight:900;font-stretch:112%;min-height:36px}
+.exname:focus{border:0;box-shadow:inset 0 -2px 0 var(--accent)}
+.exsub{font-size:14px;color:var(--muted);margin-bottom:12px}
+.sethead,.setrow{display:grid;grid-template-columns:40px 1fr 60px 52px 36px 28px;gap:4px;align-items:center}
+.sethead{letter-spacing:.06em}
+.sethead{margin-bottom:4px}
+.sethead span:nth-child(3),.sethead span:nth-child(4){text-align:center}
+.setrow{min-height:52px}
+.setrow .n{font-weight:900;font-size:17px}
+.setrow .prev{font-size:14px;color:var(--muted);white-space:nowrap}
+.setrow input{text-align:center;padding:4px;font-weight:800;font-size:18px;min-height:44px;background:var(--pad)}
+.sbtn{border:0;background:var(--soft);color:var(--ink);border-radius:var(--r-sm);min-height:36px;font-weight:800}
+.sbtn:disabled{opacity:.35}
+.ex .btn.ghost{margin-top:8px}
+.iconbtn.sm{min-width:32px;padding:4px}
 details.wo{background:var(--surface);border-radius:20px;margin-bottom:8px}
 details.wo summary{padding:14px 16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px}
 details.wo summary::-webkit-details-marker{display:none}
@@ -392,9 +409,16 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .kudos.on svg{color:var(--on-accent)}
 .kudosin{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:16px;padding:10px 14px;margin-top:12px;font-size:14px}
 .kudosin svg{color:var(--accent);flex:none}
-.wbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:14px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:var(--surface);display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.18)}
-.wrow{display:flex;align-items:center;gap:12px}
-.restbar{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 8px;margin:0 -8px;border-radius:14px}
+.wbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:16px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);box-shadow:0 -8px 24px rgba(0,0,0,.14)}
+.wline{height:4px;margin:0 -16px 12px;background:var(--soft)}
+.wline i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+.wrow{display:flex;align-items:center;gap:4px}
+.restbar{flex:1;min-width:0;display:flex;align-items:center;gap:4px;min-height:52px;padding:0 8px;margin:0 0 0 -8px;border-radius:var(--r-btn)}
+.rtime{border:0;background:none;color:inherit;padding:0;display:flex;flex-direction:column;align-items:flex-start;min-width:76px;text-align:left}
+.rtime.idle .num{color:var(--muted)}
+.wsave{padding:8px 14px}
+.wrow .btn{white-space:nowrap}
+.restbar .btn.sm{padding:4px 10px}
 .restbar.done{background:var(--accent);color:var(--on-accent)}
 .restbar.done .btn{background:var(--on-accent);color:var(--accent)}
 .switch{appearance:none;-webkit-appearance:none;width:52px;height:32px;min-height:0;padding:0;border-radius:16px;background:var(--soft);border:0;position:relative;flex:none;cursor:pointer;transition:background .15s}
@@ -421,10 +445,11 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .sharein{background:#076A9F;color:#fff;border-radius:20px;padding:14px 16px;margin-bottom:12px}
 .sharein .btn{background:#fff;color:#15181C}
 .sharein .btn.line{background:none;border-color:#fff;color:#fff}
-.autot{display:flex;align-items:center;gap:8px;cursor:pointer}
-.autot .switch{width:44px;height:26px}
-.autot .switch::after{width:20px;height:20px}
-.autot .switch:checked::after{transform:translateX(18px)}
+.autot{display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--soft);border-radius:var(--r-btn);min-height:44px;padding:0 10px;font-weight:800;font-size:14px;flex:none}
+.autot i{width:8px;height:8px;border-radius:4px;background:var(--muted)}
+.autot.on i{background:var(--accent)}
+.autot:has(input:focus-visible){outline:3px solid var(--accent)}
+.vh{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 
 /* Login */
 .auth{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 48px) 20px 40px}
@@ -1125,19 +1150,26 @@ function startRest(sec){
   tickRest();
 }
 function adjRest(d){ if (!TM.end) return; TM.end += d * 1000; TM.dur = Math.max(1, TM.dur + d); tickRest(); }
-function stopRest(){ TM.end = 0; clearInterval(TM.iv); TM.iv = null; tickRest(); }
+function stopRest(){ TM.end = 0; TM.adj = false; clearInterval(TM.iv); TM.iv = null; tickRest(); }
 function tickRest(){
-  const el = $('#restbar'); const left = Math.ceil((TM.end - Date.now()) / 1000);
-  if (TM.end && left <= 0){ TM.end = 0; clearInterval(TM.iv); TM.iv = null; if (!document.hidden) beep(); if (el){ el.classList.add('done'); el.innerHTML = `<b class="num" style="font-size:24px">Weiter geht's</b><span style="flex:1"></span><button class="btn sm" onclick="this.closest('#restbar').classList.remove('done');tickRest()">OK</button>`; } return; }
+  const el = $('#restbar'), line = $('#wline'); const left = Math.ceil((TM.end - Date.now()) / 1000);
+  if (W && $('#wmeta') && !W.id) wMeta();
+  if (!TM.end || left <= 0) delete el?.dataset.mode;
+  if (TM.end && left <= 0){ TM.end = 0; TM.adj = false; clearInterval(TM.iv); TM.iv = null; if (!document.hidden) beep(); if (line) line.style.width = '0'; if (el){ el.classList.add('done'); el.innerHTML = `<b class="num n24">Weiter geht's</b><span style="flex:1"></span><button class="btn sm" onclick="this.closest('#restbar').classList.remove('done');tickRest()">OK</button>`; } return; }
   if (!el) return;
-  if (!TM.end){ el.classList.remove('done'); el.innerHTML = `<span class="small muted" style="font-weight:700">Pausentimer</span><span style="flex:1"></span><button class="btn sm ghost" onclick="startRest()">Pause ${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)} starten</button>`; return; }
+  if (!TM.end){ if (line) line.style.width = '0'; el.classList.remove('done'); el.innerHTML = `<button class="rtime idle" onclick="startRest()" aria-label="Pause starten"><span class="lbl">Pause</span><b class="num n36">${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)}</b></button><button class="btn sm ghost" onclick="startRest()">Starten</button>`; return; }
   const pct = Math.max(0, Math.min(100, left / TM.dur * 100));
+  if (line) line.style.width = pct + '%';
+  // Nur die Zeit aktualisieren; Knöpfe nur bei Zustandswechsel neu bauen, sonst gehen Taps verloren
+  const mode = 'run' + (TM.adj ? 'a' : '');
+  if (el.dataset.mode === mode && el.querySelector('.rtime .num')){ el.querySelector('.rtime .num').textContent = `${Math.floor(left / 60)}:${z(left % 60)}`; return; }
+  el.dataset.mode = mode;
   el.classList.remove('done');
-  el.innerHTML = `<b class="num" style="font-size:28px;min-width:64px">${Math.floor(left / 60)}:${z(left % 60)}</b>
-    <div style="flex:1"><div class="track c" style="--c:var(--accent);height:6px;margin:0"><i style="width:${pct}%"></i></div></div>
-    <button class="btn sm ghost" onclick="adjRest(-15)" aria-label="15 Sekunden weniger">−15</button><button class="btn sm ghost" onclick="adjRest(15)" aria-label="15 Sekunden mehr">+15</button><button class="iconbtn" onclick="stopRest()" aria-label="Pause beenden">×</button>`;
+  el.innerHTML = `<button class="rtime" onclick="TM.adj=!TM.adj;tickRest()" aria-label="Pause anpassen" aria-expanded="${!!TM.adj}"><span class="lbl">Pause</span><b class="num n36">${Math.floor(left / 60)}:${z(left % 60)}</b></button>
+    ${TM.adj ? `<button class="btn sm ghost" onclick="adjRest(-15)" aria-label="15 Sekunden weniger">−15</button><button class="btn sm ghost" onclick="adjRest(15)" aria-label="15 Sekunden mehr">+15</button>`
+      : `<button class="btn sm ghost" onclick="adjRest(30)" aria-label="30 Sekunden mehr">+30 s</button><button class="iconbtn sm" onclick="stopRest()" aria-label="Pause beenden">×</button>`}`;
 }
-const autotHtml = () => `<label class="autot"><input type="checkbox" class="switch" ${restAuto() ? 'checked' : ''} onchange="setRestAuto(this.checked)" aria-label="Pausentimer automatisch starten"><span class="small" style="font-weight:700">Auto-Timer${restAuto() ? '' : ' aus'}</span></label>`;
+const autotHtml = () => `<label class="autot ${restAuto() ? 'on' : ''}"><input type="checkbox" class="vh" ${restAuto() ? 'checked' : ''} onchange="setRestAuto(this.checked)" aria-label="Pausentimer automatisch starten"><i></i><span>Auto</span></label>`;
 function drawAutot(){ const el = $('#autot'); if (el) el.innerHTML = autotHtml(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tickRest(); });
 
@@ -1880,7 +1912,7 @@ async function lastMap(excludeId){
 const startWorkout = run(async rid => {
   unlockAudio();
   const r = rid ? S.rt[rid] : null;
-  W = { day: S.day, routine_id: rid || null, name: r ? r.data.name : 'Freies Training', note: '',
+  W = { day: S.day, start: Date.now(), routine_id: rid || null, name: r ? r.data.name : 'Freies Training', note: '',
         exercises: r ? r.data.exercises.map(e => ({ name: e.name, target: e.reps, sets: Array.from({ length: e.sets }, () => ({ kg:'', reps:'' })) })) : [],
         last: await lastMap() };
   drawWorkout();
@@ -1891,26 +1923,37 @@ const editWorkout = run(async id => {
   W = { id, day: w.day, ...JSON.parse(JSON.stringify(w.data)), last: await lastMap(id) };
   drawWorkout();
 });
+const equipOf = n => { const k = (n || '').trim().toLowerCase(); for (const g of Object.values(EX_LIB)) for (const [x, eq] of g) if (x.toLowerCase() === k) return eq; return ''; };
+const exDone = e => e.sets.length > 0 && e.sets.every(s => num(s.reps));
+// Kopf der laufenden Einheit: Dauer, Fortschritt, Volumen (ohne Neuzeichnen aktualisierbar)
+function wMeta(){
+  const el = $('#wmeta'); if (!el || !W) return;
+  const done = W.exercises.filter(exDone).length, cur = W.exercises.findIndex(e => !exDone(e));
+  const vol = W.exercises.reduce((a, e) => a + e.sets.reduce((b, s) => b + num(s.kg) * num(s.reps), 0), 0);
+  const t = W.id ? dayLabel(W.day) : `${Math.max(0, Math.floor((Date.now() - (W.start || Date.now())) / 60000))} min`;
+  el.innerHTML = `<span>${t} · ${done} von ${W.exercises.length} Übungen</span><span>${fmt(vol)} kg</span>`;
+  $('#wseg').innerHTML = W.exercises.map((e, i) => `<i class="${exDone(e) ? 'done' : i === cur ? 'cur' : ''}"></i>`).join('');
+}
 function drawWorkout(){
-  const lastTxt = n => { const l = W.last[n.toLowerCase()]; return l ? `Zuletzt ${shortDate(l.day)}: ${l.sets.filter(s => num(s.reps)).map(s => `${fmt1(num(s.kg)).replace(',0', '')}×${s.reps}`).join(', ')}` : ''; };
   const lastSet = (n, j) => { const l = W.last[n.toLowerCase()]; return l ? (l.sets[j] || l.sets.at(-1)) : null; };
-  openSheet(`<div class="sh-head"><h3>${W.id ? 'Einheit bearbeiten' : 'Training, ' + dayLabel(W.day)}</h3><button class="btn sm ghost" onclick="if(confirm('Ohne Speichern schließen? Die Einheit wird verworfen.')){clearDraft();closeSheet()}">Schließen</button></div><div oninput="saveDraft()">
-    <label class="f"><span>Bezeichnung</span><input value="${esc(W.name)}" oninput="W.name=this.value"></label>
-    ${W.exercises.map((e, i) => `<div class="ex">
-      <div class="ex-h"><input value="${esc(e.name)}" placeholder="Übung" oninput="W.exercises[${i}].name=this.value"><button class="iconbtn" aria-label="Übung entfernen" onclick="W.exercises.splice(${i},1);drawWorkout()">×</button></div>
-      <div class="last">${e.target ? 'Ziel: ' + esc(e.target) + ' Wdh. ' : ''}${esc(lastTxt(e.name))}</div>
-      ${e.sets.map((s, j) => { const ls = lastSet(e.name, j); return `<div class="setrow"><span class="n">${j + 1}</span>
-        <input inputmode="decimal" aria-label="Gewicht in kg" placeholder="${ls ? esc(ls.kg) : 'kg'}" value="${esc(s.kg)}" oninput="W.exercises[${i}].sets[${j}].kg=this.value">
-        <span class="muted">×</span>
-        <input inputmode="numeric" aria-label="Wiederholungen" placeholder="${ls ? esc(ls.reps) : 'Wdh'}" value="${esc(s.reps)}" oninput="W.exercises[${i}].sets[${j}].reps=this.value" onchange="if(this.value)autoRest()">
-        <button class="btn sm ghost" style="padding:4px" aria-label="Wie letztes Mal" ${ls ? '' : 'disabled'} onclick="copyLast(${i},${j})">=</button>
+  const kgTxt = v => fmt1(num(v)).replace(',0', '');
+  openSheet(`<div class="whead"><input class="wname" value="${esc(W.name)}" aria-label="Bezeichnung" oninput="W.name=this.value"><button class="tbtn" onclick="if(confirm('Ohne Speichern schließen? Die Einheit wird verworfen.')){clearDraft();closeSheet()}">Schließen</button></div>
+    <div class="wmeta" id="wmeta"></div><div class="wseg" id="wseg"></div><div oninput="saveDraft()">
+    ${W.exercises.map((e, i) => { const eq = equipOf(e.name); return `<div class="ex">
+      <div class="ex-h"><input class="exname" value="${esc(e.name)}" placeholder="Übung" aria-label="Übung" oninput="W.exercises[${i}].name=this.value"><button class="iconbtn" aria-label="Übung entfernen" onclick="W.exercises.splice(${i},1);drawWorkout()">×</button></div>
+      <div class="exsub">${[eq, e.target ? `Ziel ${e.sets.length} × ${esc(e.target).replace('-', '–')}` : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
+      <div class="sethead lbl"><span>Satz</span><span>Vorher</span><span>kg</span><span>Wdh</span></div>
+      ${e.sets.map((s, j) => { const ls = lastSet(e.name, j); return `<div class="setrow"><span class="n">${j + 1}</span><span class="prev">${ls ? `${kgTxt(ls.kg)} × ${esc(ls.reps)}` : '–'}</span>
+        <input inputmode="decimal" aria-label="Gewicht in kg" placeholder="${ls ? esc(kgTxt(ls.kg)) : 'kg'}" value="${esc(s.kg)}" oninput="W.exercises[${i}].sets[${j}].kg=this.value;wMeta()">
+        <input inputmode="numeric" aria-label="Wiederholungen" placeholder="${ls ? esc(ls.reps) : 'Wdh'}" value="${esc(s.reps)}" oninput="W.exercises[${i}].sets[${j}].reps=this.value;wMeta()" onchange="if(this.value)autoRest()">
+        <button class="sbtn" aria-label="Wie letztes Mal" ${ls ? '' : 'disabled'} onclick="copyLast(${i},${j})">=</button>
         <button class="iconbtn" aria-label="Satz entfernen" onclick="W.exercises[${i}].sets.splice(${j},1);drawWorkout()">×</button></div>`; }).join('')}
-      <button class="btn sm ghost" onclick="addSet(${i})">+ Satz</button></div>`).join('')}
-    <div class="btns" style="margin-top:0"><button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from===x.to?String(x.from):x.from+'-'+x.to,sets:Array.from({length:x.sets},()=>({kg:'',reps:''}))}),back:drawWorkout})">+ Übung hinzufügen</button></div>
-    <label class="f" style="margin-top:14px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
+      <button class="btn ghost" onclick="addSet(${i})">Satz hinzufügen</button></div>`; }).join('')}
+    <button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from===x.to?String(x.from):x.from+'-'+x.to,sets:Array.from({length:x.sets},()=>({kg:'',reps:''}))}),back:drawWorkout})">+ Übung hinzufügen</button>
+    <label class="f" style="margin-top:16px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     ${W.id ? `<div class="btns"><button class="btn danger" onclick="deleteWorkout()">Einheit löschen</button></div>` : ''}
-    </div><div class="wbar"><div id="restbar" class="restbar"></div><div class="wrow"><span id="autot">${autotHtml()}</span><button class="btn accent" style="flex:1" onclick="saveWorkout()">Einheit speichern</button></div></div>`);
-  tickRest(); saveDraft();
+    </div><div class="wbar"><div class="wline"><i id="wline"></i></div><div class="wrow"><div id="restbar" class="restbar"></div><span id="autot">${autotHtml()}</span><button class="btn wsave" onclick="saveWorkout()">Speichern</button></div></div>`);
+  tickRest(); wMeta(); saveDraft();
 }
 function copyLast(i, j){ const e = W.exercises[i]; const l = W.last[e.name.toLowerCase()]; const s = l && (l.sets[j] || l.sets.at(-1)); if (s){ e.sets[j] = { kg: s.kg, reps: s.reps }; autoRest(); drawWorkout(); } }
 function addSet(i){ const s = W.exercises[i].sets; const prev = s.at(-1) || { kg:'', reps:'' }; s.push({ kg: prev.kg, reps: prev.reps }); drawWorkout(); }

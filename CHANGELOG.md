@@ -9,6 +9,7 @@
 - Körper: Trendtafel mit Ø 7 Tage, Tempo pro Woche und Diagramm, Maße als Liste
 - Profil: Tafel mit Foto und Level, Einstellungen in drei Gruppen
 - Training: Tafel „Als Nächstes“ mit dem Trainingstag, der am längsten her ist, Trainingstage mit Start-Knopf, letzte Einheiten mit Bestwerten
+- Laufende Einheit: Kopf mit Dauer und Fortschritt, Satzzeilen mit Vorher-Werten, Pausenleiste mit +30 s
 - Fehlerbehebung: Vorlagen zeigten 0 kcal, Abhaken im Plan trug 0 kcal ein
 
 ## 1.5.2 – 16.10.2026
