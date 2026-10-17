@@ -5,6 +5,7 @@
 - Tab-Leiste: Icons über den Bezeichnungen
 - Heute: Anzeigetafel statt Ring, Wochenleiste für euch beide, Trainingskachel mit nächstem Trainingstag, Hinweise gebündelt
 - Essen: alle Mahlzeiten in einer Liste zum Aufklappen, Vorschläge in der passenden Mahlzeit, Suche und Scan fest unten
+- Suche: oft gegessene Lebensmittel der Mahlzeit zuerst, Schnell-Plus mit der letzten Menge, Korb mit „Eintragen“
 - Fehlerbehebung: Vorlagen zeigten 0 kcal, Abhaken im Plan trug 0 kcal ein
 
 ## 1.5.2 – 16.10.2026

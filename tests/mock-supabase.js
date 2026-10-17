@@ -8,8 +8,8 @@
     {id:uid,display_name:'Max',invite_code:'ABC123',partner_id:pid,data:{sex:'m',birthYear:1992,height:180,weight:85,steps:8000,sessions:4,sessionMin:60,trainType:'kraft',goal:'cut',rate:0.5,protein:2,fat:0.9,targets:{cycle:false,avg:{kcal:2100,p:170,c:200,f:77},rest:{kcal:2000,p:170,c:180,f:77},train:{kcal:2200,p:170,c:230,f:77}}}},
     {id:pid,display_name:'Lena Sommer',invite_code:'XYZ789',partner_id:uid,data:{targets:{cycle:false,avg:{kcal:1800,p:130,c:180,f:60}},share:{weight:false},game:{level:5,title:'Stammgast',into:40,need:300,streak:4,longest:9,week:320,todayXp:45,badges:[{name:'Serie 7',desc:'7 Tage am Stück',v:7,goal:7,icon:'fire',done:true}]}}}],entries:[]};
   for(let i=14;i>=0;i--){const d=ad(-i);
-    DB.entries.push({id:id(),user_id:uid,kind:'log',day:d,data:{slot:'mittag',name:'Hähnchen Reis',kcal:1500,p:120,c:150,f:40},created_at:d});
-    DB.entries.push({id:id(),user_id:uid,kind:'log',day:d,data:{slot:'fruehstueck',name:'Skyr',kcal:450,p:45,c:40,f:8},created_at:d});
+    DB.entries.push({id:id(),user_id:uid,kind:'log',day:d,data:{slot:'mittag',name:'Hähnchen Reis',grams:600,per:{kcal:250,p:20,c:25,f:6.7},kcal:1500,p:120,c:150,f:40},created_at:d});
+    DB.entries.push({id:id(),user_id:uid,kind:'log',day:d,data:{slot:'fruehstueck',name:'Skyr',grams:300,per:{kcal:150,p:15,c:13.3,f:2.7},kcal:450,p:45,c:40,f:8},created_at:d});
     DB.entries.push({id:id(),user_id:uid,kind:'weight',day:d,data:{kg:86-i*0.08},created_at:d});
     DB.entries.push({id:id(),user_id:pid,kind:'log',day:d,data:{slot:'abend',name:'Bowl',kcal:1200,p:80,c:120,f:40},created_at:d});
     if(i%2==0){DB.entries.push({id:id(),user_id:uid,kind:'workout',day:d,data:{name:'Oberkörper A',exercises:[{name:'Bankdrücken',sets:[{kg:70+(14-i),reps:8},{kg:70+(14-i),reps:7}]},{name:'Rudern am Kabel',sets:[{kg:55,reps:10}]}],note:''},created_at:d});
@@ -33,6 +33,7 @@
   B.prototype.update=function(p){this.op='update';this.patch=p;return this};
   B.prototype.delete=function(){this.op='delete';return this};
   B.prototype.then=function(res,rej){ const T=DB[this.t]; let out;
+    if(!navigator.onLine) return Promise.resolve({data:null,error:{message:'Failed to fetch'}}).then(res,rej); // offline wie echte Supabase
     if(this.op==='insert'){ const made=this.rows.map(r=>({id:id(),user_id:uid,created_at:new Date().toISOString(),...r})); T.push(...made); out=this.one?made[0]:made; }
     else { let rows=T.filter(r=>this.f.every(f=>f(r)));
       if(this.op==='update'){ rows.forEach(r=>Object.assign(r,this.patch)); out=null; }

@@ -49,7 +49,7 @@ h2{font-size:22px}h3{font-size:20px}
 .board .track.over>i{background:var(--warn)}
 .board hr{border:0;border-top:1px solid var(--board-soft);margin:16px 0}
 .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.n108{font-size:108px;line-height:.8}.n96{font-size:96px;line-height:.8}.n54{font-size:54px;line-height:.8}
+.n108{font-size:108px;line-height:.8}.n88{font-size:88px;line-height:.8}.n96{font-size:96px;line-height:.8}.n54{font-size:54px;line-height:.8}
 .n44{font-size:44px;line-height:.8}.n40{font-size:40px;line-height:.8}.n36{font-size:36px;line-height:.9}
 .n28{font-size:28px;line-height:1}.n24{font-size:24px;line-height:1}.n20{font-size:20px;line-height:1.1}
 .unit{font-size:15px;font-weight:600;font-stretch:100%;color:var(--muted);margin-left:2px}
@@ -143,8 +143,10 @@ button.row:last-child{border-bottom:0}
 
 /* Essen */
 .eboard{display:flex;gap:16px;align-items:flex-end;padding:16px 20px}
-.emac{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-width:0}
+.emac{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
 .emac .unit{font-size:12px}
+.emac>div{min-width:0;overflow:hidden}
+.emac .lbl{letter-spacing:.06em}
 .meals{margin-top:12px}
 .meal{border-bottom:1px solid var(--line)}
 .meal:last-child{border-bottom:0}
@@ -168,6 +170,27 @@ button.row:last-child{border-bottom:0}
 .fsearch{flex:1;display:flex;align-items:center;gap:12px;min-height:52px;border:2px solid var(--line);border-radius:var(--r-card);background:var(--surface);color:var(--muted);font-weight:600;padding:0 16px;box-shadow:0 8px 24px rgba(0,0,0,.12);text-align:left}
 .fscan{flex:none;width:52px;height:52px;border:0;border-radius:var(--r-card);background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+
+/* Lebensmittelsuche */
+.slotpick{position:relative;display:inline-flex;align-items:center;gap:4px;min-height:44px}
+.slotpick h3{font-size:26px}
+.slotpick select{position:absolute;inset:0;opacity:0;width:100%;min-height:0}
+.searchrow.big{gap:8px}
+.sfield{flex:1;display:flex;align-items:center;gap:8px;border:2px solid var(--ink);border-radius:var(--r-btn);background:var(--pad);padding:0 12px;min-height:52px;color:var(--muted)}
+.sfield input{border:0;background:none;padding:0;min-height:48px;color:var(--ink)}
+.sfield input:focus{border:0}
+.sscan{flex:none;width:52px;height:52px;border:0;border-radius:var(--r-btn);background:var(--soft);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.sscan.on{background:var(--ink);color:var(--bg)}
+.frow{display:flex;align-items:center;gap:8px;min-height:60px;padding:0 8px 0 0;border-bottom:1px solid var(--line)}
+.frow:last-child{border-bottom:0}
+.fname{flex:1;min-width:0;display:flex;flex-direction:column;border:0;background:none;color:inherit;text-align:left;padding:8px 0 8px 16px;align-self:stretch;justify-content:center}
+.fname .t{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fname .s{font-size:13px;color:var(--muted)}
+.qplus{flex:none;width:44px;height:44px;border:0;border-radius:var(--r-btn);background:var(--soft);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.qplus.in{background:var(--ink);color:var(--bg)}
+.binfo{display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;text-align:left;padding:0;min-height:44px;flex:1;min-width:0}
+.binfo .s{display:block;font-size:13px;color:var(--muted)}
+.bcount{flex:none;width:36px;height:36px;border-radius:18px;background:var(--ink);color:var(--bg);font-weight:900;display:flex;align-items:center;justify-content:center}
 
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
@@ -339,8 +362,7 @@ table.m th{font-weight:700;color:var(--muted);font-size:13px}
 .net-wrap:empty{display:none}
 .netbar{display:block;width:100%;margin-top:8px;border:0;border-radius:12px;padding:8px 12px;background:var(--surface);color:var(--ink);font-weight:700;font-size:13px;text-align:center}
 .netbar.off{background:var(--ink);color:var(--bg)}
-.bbar{position:sticky;bottom:0;margin:14px -4px 0;background:var(--accent);color:var(--on-accent);border-radius:20px;padding:12px 12px 12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.2)}
-.bbar .btn{background:var(--on-accent);color:var(--accent)}
+.bbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:16px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -8px 24px rgba(0,0,0,.14)}
 .gin{width:76px;min-height:40px;text-align:center;font-weight:800;padding:6px}
 .slotsel{width:auto;max-width:48%;min-height:40px;padding:6px 8px;font-size:14px;font-weight:700}
 .draft{background:var(--accent);color:var(--on-accent);border-radius:20px;padding:14px 16px;margin-bottom:16px}
@@ -452,6 +474,12 @@ function cacheSet(key, rows){
   if (!LSS('spotter:qc', c)){ c.keys.slice(0, 75).forEach(k => delete c.data[k]); c.keys = c.keys.slice(75); LSS('spotter:qc', c); }
 }
 const cacheGet = key => LSJ('spotter:qc', { data: {} }).data[key];
+// Kein exakter Treffer (z. B. am nächsten Tag offline): größten zwischengespeicherten Zeitraum derselben Art nehmen
+function cacheNear(kind, uid){
+  const c = LSJ('spotter:qc', { keys: [], data: {} }); let best = null;
+  c.keys.forEach(k => { const [kk, ku] = k.split('|'); if (kk === kind && ku === uid && (!best || (c.data[k] || []).length > c.data[best].length)) best = k; });
+  return best ? c.data[best] : null;
+}
 function setOnline(on){ if (S.offline === !on) return; S.offline = !on; netUI(); if (on) syncQueue(); }
 function netUI(){
   const el = $('#net'); if (!el) return;
@@ -485,7 +513,7 @@ async function q(kind, uid, from, to){
     rows = data || []; cacheSet(key, rows); setOnline(true);
   } catch (e) {
     if (!NET_ERR(e)) throw e;
-    setOnline(false); rows = cacheGet(key) || [];
+    setOnline(false); rows = cacheGet(key) || cacheNear(kind, uid) || [];
   }
   return applyQueue(rows, kind, uid, from, to);
 }
@@ -712,7 +740,7 @@ function dayBoard(d, partner){
   const macro = (lbl, v, g) => `<div><div class="lbl">${lbl}</div><div style="margin-top:8px"><b class="num n28">${fmt(v)}</b>${g ? `<span class="unit">/${fmt(g)} g</span>` : '<span class="unit">g</span>'}</div><div class="track t4 ${g && v > g * 1.1 ? 'over' : ''}"><i style="width:${g ? Math.min(100, v / g * 100) : 0}%"></i></div></div>`;
   return `<div class="board ${partner ? 'pboard' : ''}" id="${partner ? 'pboard' : 'board'}">
     <div class="bhead"><span class="lbl">${!tgt ? 'kcal heute' : over ? 'kcal drüber' : 'kcal übrig'}</span><span class="small muted">${tgt ? `${fmt(tot.kcal)} von ${fmt(tgt.kcal)} gegessen${kind}` : (d.p.id === S.user.id ? 'Noch keine Ziele' : 'Keine Ziele hinterlegt')}</span></div>
-    <div class="num n108 bnum ${over ? 'over' : ''}">${tgt ? (over ? '+' + fmt(-left) : fmt(left)) : fmt(tot.kcal)}</div>
+    ${(v => `<div class="num ${v.length > 5 ? 'n88' : 'n108'} bnum">${v}</div>`)(tgt ? (over ? '+' + fmt(-left) : fmt(left)) : fmt(tot.kcal))}
     ${tgt ? `<div class="track t10 ${over ? 'over' : ''}"><i style="width:${Math.min(100, tot.kcal / tgt.kcal * 100)}%"></i></div>` : `<p class="small muted" style="margin:12px 0 0">${d.p.id === S.user.id ? 'Berechne deine Ziele unter Profil, dann siehst du hier, was übrig ist.' : ''}</p>`}
     <hr><div class="macros">${macro('Protein', tot.p, tgt?.p)}${macro('Carbs', tot.c, tgt?.c)}${macro('Fett', tot.f, tgt?.f)}</div></div>`;
 }
@@ -1292,7 +1320,7 @@ async function rEssen(){
   const tot = sum(logs), tgt = targetFor(p, S.day, wos.length > 0), left = tgt ? tgt.kcal - tot.kcal : 0;
   const inbox = mine ? await pendingShares() : [];
   const mini = (lbl, v, g) => `<div><div class="lbl">${lbl}</div><div style="margin-top:4px;white-space:nowrap"><b class="num n20">${fmt(v)}</b>${g ? `<span class="unit">/${fmt(g)}</span>` : ''}</div><div class="track t4 ${g && v > g * 1.1 ? 'over' : ''}"><i style="width:${g ? Math.min(100, v / g * 100) : 0}%"></i></div></div>`;
-  let h = `<div class="board eboard"><div><div class="lbl">${!tgt ? 'kcal heute' : left < 0 ? 'kcal drüber' : 'kcal übrig'}</div><div class="num n54" style="margin-top:8px">${tgt ? (left < 0 ? '+' + fmt(-left) : fmt(left)) : fmt(tot.kcal)}</div></div>
+  let h = `<div class="board eboard"><div><div class="lbl">${!tgt ? 'kcal heute' : left < 0 ? 'kcal drüber' : 'kcal übrig'}</div>${(v => `<div class="num ${v.length > 5 ? 'n36' : v.length > 3 ? 'n40' : 'n54'}" style="margin-top:8px">${v}</div>`)(tgt ? (left < 0 ? '+' + fmt(-left) : fmt(left)) : fmt(tot.kcal))}</div>
     <div class="emac">${mini('Protein', tot.p, tgt?.p)}${mini('Carbs', tot.c, tgt?.c)}${mini('Fett', tot.f, tgt?.f)}</div></div>`;
   h += '<div class="list meals">';
   for (const [k, label] of SLOTS){
@@ -1324,44 +1352,65 @@ const delLog = run(async id => { await del(id); render(); });
 
 /* ---------- Lebensmittel-Auswahl mit Sammelkorb ---------- */
 let P = null;
+const I_CHECK = ICON('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
+const I_DOWN = ICON('<path d="M6 9l6 6 6-6"/>');
 async function openPicker(opts){
   P = { tab:'suche', results:[], lib:null, basket:[], ...opts };
   if (P.mode === 'log' && P.slot) S.openSlot = P.slot;
   drawPicker();
-  P.lib = await loadLib(); if (P.tab === 'suche' && !P.results.length) showResults(P.lib.slice(0, 30), 'Eigene und zuletzt verwendete');
+  P.lib = await loadLib(); if (P.tab === 'suche' && !P.q) showLib();
 }
+// Eigene, Partner- und zuletzt geloggte Lebensmittel mit Häufigkeit je Mahlzeit und zuletzt verwendeter Menge.
+// Quelle sind die log-Einträge der letzten 90 Tage über q, damit es offline aus dem Cache funktioniert.
 async function loadLib(){
   const ids = [S.user.id, S.partner?.id].filter(Boolean);
-  const [foods, logs] = await Promise.all([ Promise.all(ids.map(id => q('food', id))).then(x => x.flat()), q('log', S.user.id, addDays(today(), -45), null) ]);
-  const seen = new Set(), out = [];
-  foods.forEach(f => { const k = f.data.name.toLowerCase(); if (!seen.has(k)){ seen.add(k); out.push({ ...f.data, src:'eigen' }); } });
-  logs.reverse().forEach(l => { if (!l.data.per) return; const k = l.data.name.toLowerCase(); if (!seen.has(k)){ seen.add(k); out.push({ name:l.data.name, per:l.data.per, serving:l.data.grams, src:'zuletzt' }); } });
-  return out;
+  const [foods, logs] = await Promise.all([ Promise.all(ids.map(id => q('food', id).catch(() => []))).then(x => x.flat()), q('log', S.user.id, addDays(today(), -90), today()).catch(() => []) ]);
+  const by = new Map(), key = n => (n || '').trim().toLowerCase();
+  foods.forEach(f => { const k = key(f.data.name); if (!by.has(k)) by.set(k, { ...f.data, src: f.user_id === S.user.id ? 'eigen' : 'partner', slots: {}, last: '' }); });
+  logs.forEach(l => {
+    if (!l.data.per) return;
+    const k = key(l.data.name); let e = by.get(k);
+    if (!e){ e = { name: l.data.name, per: l.data.per, src: 'zuletzt', slots: {}, last: '' }; by.set(k, e); }
+    const s = l.data.slot || 'snack'; e.slots[s] = (e.slots[s] || 0) + 1;
+    if ((l.day || '') >= e.last){ e.last = l.day || ''; if (l.data.grams) e.serving = l.data.grams; }
+  });
+  return [...by.values()];
+}
+function showLib(){
+  const lib = P.lib || [], sl = P.mode === 'log' ? P.slot : null;
+  const often = sl ? lib.filter(f => f.slots[sl]).sort((a, b) => (b.slots[sl] - a.slots[sl]) || b.last.localeCompare(a.last)).slice(0, 8) : [];
+  const recent = lib.filter(f => f.last && !often.includes(f)).sort((a, b) => b.last.localeCompare(a.last)).slice(0, 30);
+  showResults([[sl ? 'Oft in ' + slotName(sl) : '', often], ['Zuletzt verwendet', recent]]);
 }
 function pickerClose(){
   if (P.basket.length && !confirm('Der Korb enthält ' + P.basket.length + ' Lebensmittel. Verwerfen?')) return;
   stopScan(); if (P.mode === 'recipe') drawRecipe(); else closeSheet();
 }
+function setSlot(v){ P.slot = v; P.title = slotName(v); S.openSlot = v; drawPicker(); }
 function drawPicker(){
   stopScan();
-  const tabs = [['suche','Suchen'],['scan','Scannen'], ...(P.mode === 'log' ? [['vorlage','Vorlagen']] : []), ['eigen','Eigenes']];
-  let h = `<div class="sh-head"><h3>${esc(P.title)}</h3><button class="btn sm ghost" onclick="pickerClose()">${P.mode === 'recipe' ? 'Zurück' : 'Schließen'}</button></div><div class="seg">${tabs.map(([k, l]) => `<button class="${P.tab === k ? 'on' : ''}" onclick="P.tab='${k}';drawPicker()">${l}</button>`).join('')}</div>`;
-  if (P.tab === 'suche') h += `<div class="searchrow"><input id="pq" type="search" placeholder="z. B. Skyr, Haferflocken" enterkeyhint="search" value="${esc(P.q || '')}" onkeydown="if(event.key==='Enter')doSearch()"><button class="btn" onclick="doSearch()">Suchen</button></div><p class="small muted" style="margin:-4px 0 10px">Tippen legt das Lebensmittel in den Korb, Mengen änderst du vor dem Speichern.</p><div id="pres"><p class="muted">Lädt …</p></div>`;
+  const tabs = [['suche','Zuletzt'], ...(P.mode === 'log' ? [['vorlage','Rezepte']] : []), ['eigen','Eigene']];
+  let h = `<div class="sh-head">${P.mode === 'log' ? `<label class="slotpick"><h3>Zu ${esc(slotName(P.slot))}</h3>${I_DOWN}<select aria-label="Mahlzeit wählen" onchange="setSlot(this.value)">${SLOTS.map(([k, l]) => `<option value="${k}" ${P.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : `<h3>${esc(P.title)}</h3>`}
+    <button class="btn sm ghost" onclick="pickerClose()">${P.mode === 'recipe' ? 'Zurück' : 'Schließen'}</button></div>
+    <div class="searchrow big"><label class="sfield">${I_SEARCH}<input id="pq" type="search" placeholder="Lebensmittel suchen" enterkeyhint="search" value="${esc(P.q || '')}" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')doSearch()" onfocus="if(P.tab!=='suche'){P.tab='suche';drawPicker();$('#pq').focus()}"></label>
+    <button class="sscan ${P.tab === 'scan' ? 'on' : ''}" aria-label="Barcode scannen" onclick="P.tab=P.tab==='scan'?'suche':'scan';drawPicker()">${I_SCAN}</button></div>
+    <div class="seg">${tabs.map(([k, l]) => `<button class="${P.tab === k ? 'on' : ''}" onclick="P.tab='${k}';drawPicker()">${l}</button>`).join('')}</div>`;
+  if (P.tab === 'suche') h += `<div id="pres"><p class="muted">Lädt …</p></div>`;
   if (P.tab === 'scan') h += `<div id="reader"></div><p class="small muted">Scanne nacheinander alle Produkte, jedes landet direkt im Korb. Oder die Nummer eintippen:</p><div class="searchrow"><input id="bc" inputmode="numeric" placeholder="Barcode-Nummer"><button class="btn" onclick="lookupCode($('#bc').value.trim())">Suchen</button></div><div id="scanmsg"></div>`;
   if (P.tab === 'vorlage'){
     const recs = Object.values(S.rc);
     h += recs.length ? '<div class="list">' + recs.map(r => { const t = recipeTotals(r, r.data.factor || 1);
-      return `<div class="row tap" onclick="drawRecipeAmount('${r.id}')"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${r.user_id === S.user.id ? 'Meine' : 'Von ' + esc(nameOf(S.partner))}</div></div><div class="k">${fmt(t.kcal)} kcal</div></div>`; }).join('') + '</div>'
-      : '<div class="note">Noch keine Vorlagen vorhanden.</div>';
+      return `<button class="row tap frow" onclick="drawRecipeAmount('${r.id}')"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${r.user_id === S.user.id ? 'Meine' : 'Von ' + esc(nameOf(S.partner))} · ${fmt(t.kcal)} kcal</div></div><span class="chev">${CHEV}</span></button>`; }).join('') + '</div>'
+      : '<div class="note">Noch keine Rezepte. Lege unter Essen eine Mahlzeiten-Vorlage an.</div>';
   }
   if (P.tab === 'eigen'){
-    h += `<p class="small muted">Nährwerte pro 100 g, z. B. von der Verpackung.</p>
+    h += `<div id="pres"></div><div class="sec"><h3 style="font-size:19px;margin-bottom:8px">Neues Lebensmittel</h3><p class="small muted" style="margin-top:0">Nährwerte pro 100 g, z. B. von der Verpackung.</p>
       <label class="f"><span>Name</span><input id="en" value="${esc(P.prefillName || '')}"></label>
       <div class="grid4">${[['ek','kcal'],['ep','Protein'],['ec','KH'],['ef','Fett']].map(([i, l]) => `<label class="f"><span>${l}</span><input id="${i}" inputmode="decimal"></label>`).join('')}</div>
       <label class="f"><span>Menge in g</span><input id="eg" inputmode="decimal" value="100"></label>
       <label class="check"><input type="checkbox" id="esave" checked> In meiner Liste speichern</label>
-      <button class="btn full" onclick="saveOwnFood()">In den Korb</button>`;
-    if (P.mode === 'log') h += `<div class="sec"><h3 style="font-size:19px;margin-bottom:6px">Schnelleintrag</h3><p class="small muted" style="margin-top:0">Nur Gesamtwerte, z. B. für ein Restaurantessen. Wird sofort gespeichert.</p>
+      <button class="btn full" onclick="saveOwnFood()">In den Korb</button></div>`;
+    if (P.mode === 'log') h += `<div class="sec"><h3 style="font-size:19px;margin-bottom:8px">Schnelleintrag</h3><p class="small muted" style="margin-top:0">Nur Gesamtwerte, z. B. für ein Restaurantessen. Wird sofort gespeichert.</p>
       <label class="f"><span>Bezeichnung</span><input id="qn" placeholder="z. B. Pizza beim Italiener"></label>
       <div class="grid4">${[['qk','kcal'],['qp','Protein'],['qc','KH'],['qf','Fett']].map(([i, l]) => `<label class="f"><span>${l}</span><input id="${i}" inputmode="decimal"></label>`).join('')}</div>
       <button class="btn full ghost" onclick="saveQuick()">Schnelleintrag speichern</button></div>`;
@@ -1370,28 +1419,55 @@ function drawPicker(){
   openSheet(h);
   basketBar();
   if (P.tab === 'scan') startScan();
-  if (P.tab === 'suche' && P.lib) showResults(P.results.length ? P.results : P.lib.slice(0, 30), P.results.length ? '' : 'Eigene und zuletzt verwendete');
+  if (P.tab === 'suche' && P.lib){ if (P.q) liveSearch(P.q, P.results); else showLib(); }
+  if (P.tab === 'eigen' && P.lib) showResults([['Eigene Lebensmittel', P.lib.filter(f => f.src !== 'zuletzt')]], 'Noch keine eigenen Lebensmittel. Lege unten eins an.');
 }
-function showResults(list, title){
-  P.results = list;
+function liveSearch(v, extra){
+  P.q = v.trim(); const t = P.q.toLowerCase();
+  if (!t){ P.results = []; return showLib(); }
+  const local = (P.lib || []).filter(f => f.name.toLowerCase().includes(t)).sort((a, b) => b.last.localeCompare(a.last));
+  showResults([['', extra && extra.length ? extra : local]]);
+}
+function amountText(f){ const g = r0(f.serving || 100); return `${fmt(g)} g · ${fmt(scale(f.per, g).kcal)} kcal`; }
+function showResults(sections, empty){
   const el = $('#pres'); if (!el) return;
-  const inB = n => P.basket.filter(b => b.name === n).length;
-  el.innerHTML = (title ? `<p class="small muted">${title}</p>` : '') + (list.length ? '<div class="list">' + list.map((f, i) =>
-    `<div class="row tap" onclick="basketAdd(P.results[${i}])"><div class="grow"><div class="t">${esc(f.name)}</div><div class="s">${f.brand ? esc(f.brand) + ', ' : ''}${fmt(f.per.kcal)} kcal/100 g, ${f.src === 'off' ? 'Open Food Facts' : f.src === 'eigen' ? 'Eigene Liste' : 'Zuletzt verwendet'}</div></div>${inB(f.name) ? `<span class="okdot">${inB(f.name)}</span>` : '<span class="plus" aria-hidden="true">+</span>'}</div>`).join('') + '</div>'
-    : '<div class="note">Nichts gefunden. Versuche einen anderen Begriff oder lege das Lebensmittel unter Eigenes an.</div>');
+  P.results = sections.flatMap(s => s[1]);
+  const inB = n => P.basket.some(b => b.name === n);
+  let i = 0;
+  const body = sections.filter(s => s[1].length).map(([title, list]) => (title ? `<div class="lbl" style="margin:16px 4px 8px">${esc(title)}</div>` : '') + '<div class="list">' + list.map(f => { const k = i++;
+    return `<div class="frow"><button class="fname" onclick="drawAmount(${k})"><span class="t">${esc(f.name)}</span><span class="s">${f.brand ? esc(f.brand) + ' · ' : ''}${amountText(f)}</span></button>
+      <button class="qplus ${inB(f.name) ? 'in' : ''}" aria-label="${inB(f.name) ? esc(f.name) + ' aus dem Korb nehmen' : esc(f.name) + ' in den Korb'}" onclick="quickAdd(${k})">${inB(f.name) ? I_CHECK : I_PLUS}</button></div>`; }).join('') + '</div>').join('');
+  el.innerHTML = body || `<div class="note">${empty || 'Nichts gefunden. Drück auf Suchen in der Tastatur, dann wird auch Open Food Facts durchsucht.'}</div>`;
 }
+// Schnell-Plus: legt mit der zuletzt verwendeten Menge in den Korb, zweiter Tipp nimmt es wieder heraus
+function quickAdd(k){
+  const f = P.results[k], j = P.basket.map(b => b.name).lastIndexOf(f.name);
+  if (j >= 0){ P.basket.splice(j, 1); basketBar(); refreshResults(); } else basketAdd(f, true);
+}
+function refreshResults(){ if (!$('#pres')) return; const sec = [...$('#pres').querySelectorAll('.lbl')]; if (P.tab === 'eigen' || P.q || !sec.length) showResults([['', P.results]]); else showLib(); }
+function drawAmount(k){
+  const f = P.results[k]; P.amt = { f, g: r0(f.serving || 100) };
+  const opts = [...new Set([r0(f.serving || 0), 50, 100, 150, 200].filter(Boolean))];
+  openSheet(`<div class="sh-head"><h3>${esc(f.name)}</h3><button class="btn sm ghost" onclick="drawPicker()">Zurück</button></div>
+    <label class="f"><span>Menge in g</span><input id="ag" inputmode="decimal" value="${P.amt.g}" oninput="P.amt.g=num(this.value);amtPrev()"></label>
+    <div class="quick">${opts.map(g => `<button class="btn sm ghost" onclick="$('#ag').value='${g}';P.amt.g=${g};amtPrev()">${g} g</button>`).join('')}</div>
+    <div class="card" id="aprev"></div>
+    <div class="btns"><button class="btn accent full" onclick="basketAdd({...P.amt.f,serving:P.amt.g},true);drawPicker()">In den Korb</button></div>`);
+  amtPrev();
+}
+function amtPrev(){ const v = scale(P.amt.f.per, P.amt.g); $('#aprev').innerHTML = `<b class="num n36">${fmt(v.kcal)}</b><span class="unit">kcal</span><div class="small muted" style="margin-top:8px">Protein ${fmt1(v.p)} g · Kohlenhydrate ${fmt1(v.c)} g · Fett ${fmt1(v.f)} g</div>`; }
 function basketAdd(food, silent){
   const g = r0(food.serving || 100);
   P.basket.push({ name: food.name, brand: food.brand || '', grams: g, per: food.per });
   if (!silent) toast(`${food.name}: ${g} g im Korb`);
-  basketBar();
-  if (P.tab === 'suche' && $('#pres')) showResults(P.results, '');
+  basketBar(); refreshResults();
 }
 function basketBar(){
   const el = $('#bbar'); if (!el) return;
   if (!P.basket.length){ el.innerHTML = ''; return; }
   const t = P.basket.reduce((a, b) => addN(a, scale(b.per, b.grams)), ZERO);
-  el.innerHTML = `<div class="bbar"><div><b>${P.basket.length} ${P.basket.length === 1 ? 'Lebensmittel' : 'Lebensmittel'}</b><div class="small" style="opacity:.8">${fmt(t.kcal)} kcal, ${fmt(t.p)} g Protein</div></div><button class="btn" onclick="drawBasket()">Prüfen und speichern</button></div>`;
+  el.innerHTML = `<div class="bbar"><button class="binfo" onclick="drawBasket()" aria-label="Korb prüfen"><span class="bcount">${P.basket.length}</span><span><b>Im Korb</b><span class="s">${fmt(t.kcal)} kcal · ${fmt(t.p)} g Protein</span></span></button>
+    <button class="btn accent" onclick="saveBasket()">${P.mode === 'log' ? 'Eintragen' : 'Übernehmen'}</button></div>`;
 }
 function drawBasket(){
   stopScan();
@@ -1430,15 +1506,15 @@ async function doSearch(){
   P.q = term;
   const t = term.toLowerCase();
   const local = (P.lib || []).filter(f => f.name.toLowerCase().includes(t));
-  showResults(local, navigator.onLine ? 'Suche bei Open Food Facts …' : 'Offline: nur eigene und zuletzt verwendete Lebensmittel.');
+  showResults([[navigator.onLine ? 'Suche bei Open Food Facts …' : 'Offline: nur eigene und zuletzt verwendete', local]]);
   if (!navigator.onLine) return;
   try {
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=25&cc=de&lc=de&fields=${OFF_FIELDS}`;
     const res = await fetch(url); if (!res.ok) throw new Error('Status ' + res.status);
     const js = await res.json();
-    showResults([...local, ...(js.products || []).map(offMap).filter(Boolean)], '');
+    showResults([['', [...local, ...(js.products || []).map(offMap).filter(Boolean)]]]);
   } catch (e) {
-    showResults(local, 'Open Food Facts ist gerade nicht erreichbar. Unten deine eigenen Treffer.');
+    showResults([['Open Food Facts ist gerade nicht erreichbar', local]]);
   }
 }
 const saveOwnFood = run(async () => {
