@@ -11,6 +11,7 @@
 - Training: Tafel „Als Nächstes“ mit dem Trainingstag, der am längsten her ist, Trainingstage mit Start-Knopf, letzte Einheiten mit Bestwerten
 - Laufende Einheit: Kopf mit Dauer und Fortschritt, Satzzeilen mit Vorher-Werten, Pausenleiste mit +30 s
 - Rest angeglichen: Sheets, Listen, Hinweise, Wochenrückblick, Level und Abzeichen, Rechner, Editoren im neuen Design; Wochenrückblick zählt „im Ziel“ wie das Level-System
+- Bewegung: Balken füllen sich beim Öffnen, Mahlzeiten klappen weich auf (abschaltbar über „Bewegung reduzieren“)
 - Fehlerbehebung: Vorlagen zeigten 0 kcal, Abhaken im Plan trug 0 kcal ein
 
 ## 1.5.2 – 16.10.2026

@@ -275,6 +275,16 @@ def flow_profil(ctx):
     close(pg); bottom_free(pg, 'Profil')
     return pg
 
+def flow_bewegung(ctx):
+    pg = open_app(ctx)
+    anim = lambda: pg.evaluate("getComputedStyle(document.querySelector('#board .track>i')).animationName")
+    check(anim() == 'fill', 'Bewegung: Balken füllen beim Öffnen')
+    pg.evaluate("render()"); pg.wait_for_timeout(500)
+    check(anim() == 'none', 'Bewegung: keine erneute Animation nach Aktion')
+    pg.emulate_media(reduced_motion='reduce'); pg.click('#tabs >> text=Essen'); pg.click('#tabs >> text=Heute'); pg.wait_for_timeout(500)
+    check(anim() == 'none', 'Bewegung: aus bei „Bewegung reduzieren“')
+    return pg
+
 def flow_hell_dunkel(ctx):
     pg = open_app(ctx)
     for t in ['light', 'dark']:
@@ -283,7 +293,7 @@ def flow_hell_dunkel(ctx):
     return pg
 
 FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_dran,
-         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_hell_dunkel]
+         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_hell_dunkel]
 
 def main():
     filt = sys.argv[1] if len(sys.argv) > 1 else ''

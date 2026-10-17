@@ -283,6 +283,12 @@ textarea{min-height:120px;resize:vertical}
 .sheet-card{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:var(--r-board) var(--r-board) 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
 @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.sheet-card{animation:none}}
+/* Bewegung: Balken füllen beim Öffnen (300 ms), Akkordeon in Essen (200 ms) */
+@keyframes fill{from{width:0}}
+@keyframes acc{from{opacity:0;max-height:0}to{opacity:1;max-height:800px}}
+.enter .track>i,.enter .wseg i,.sheet-card .track>i,.sheet-card .xpbar i{animation:fill .3s ease-out}
+.meal.open .mexp{animation:acc .2s ease-out}
+@media (prefers-reduced-motion:reduce){.enter .track>i,.enter .wseg i,.sheet-card .track>i,.sheet-card .xpbar i,.meal.open .mexp{animation:none}.wline i{transition:none}}
 .sh-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;min-height:44px}
 .sh-head h3{font-size:26px;min-width:0;overflow-wrap:anywhere}
 .sh-head .btn.sm.ghost{background:none;color:var(--muted);font-size:16px;padding:0 4px;min-height:44px;flex:none}
@@ -749,12 +755,13 @@ let RT = 0;
 async function render(){
   const t = ++RT;
   renderHeader();
-  const v = $('#view');
+  const v = $('#view'), enter = v.dataset.tab !== S.tab;
   if (!v.dataset.tab || v.dataset.tab !== S.tab) v.innerHTML = '<p class="muted pad">Lädt …</p>';
   try {
     const html = await ({ heute:rHeute, essen:rEssen, training:rTraining, koerper:rKoerper, profil:rProfil })[S.tab]();
     if (t !== RT) return;
     v.innerHTML = html; v.dataset.tab = S.tab;
+    v.classList.toggle('enter', enter); // Balken füllen sich nur beim Öffnen des Tabs, nicht nach jeder Aktion
     document.body.classList.toggle('fixbar', !!v.querySelector('.fbar'));
     v.style.setProperty('--c', own() ? 'var(--mine)' : 'var(--partner)');
   } catch (e) {
