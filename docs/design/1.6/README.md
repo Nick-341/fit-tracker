@@ -24,3 +24,5 @@ Platzhalter wie „[Dein Name]“ oder Übungsnamen sind keine Vorgaben.
 | menge | Menge eintragen mit Zahlenfeld |
 | kalender | Monatsansicht |
 | rueckgaengig | Leiste „Gelöscht · Rückgängig“ |
+| koerper-trend | Gewichtstafel mit Trend-Zeile, beschrifteter Achse, Start- und Endwert |
+| suche | Suchfeld oben im Sheet (Fix: Eingabe darf nie unter der Tastatur verschwinden) |
