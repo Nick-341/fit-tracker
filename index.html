@@ -436,6 +436,9 @@ h3.sub{font-size:20px;margin-bottom:8px}
 .wline{height:4px;margin:0 -16px 12px;background:var(--soft)}
 .wline i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
 .wrow{display:flex;align-items:center;gap:4px}
+.wnext{display:flex;align-items:baseline;gap:8px;min-height:20px;margin:-4px 0 4px;white-space:nowrap;overflow:hidden}
+.wnext b{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.wnext:empty{display:none}
 .restbar{flex:1;min-width:0;display:flex;align-items:center;gap:4px;min-height:52px;padding:0 8px;margin:0 0 0 -8px;border-radius:var(--r-btn)}
 .rtime{border:0;background:none;color:inherit;padding:0;display:flex;flex-direction:column;align-items:flex-start;min-width:76px;text-align:left}
 .rtime.idle .num{color:var(--muted)}
@@ -2012,6 +2015,13 @@ function wMeta(){
   const t = W.id ? dayLabel(W.day) : `${Math.max(0, Math.floor((Date.now() - (W.start || Date.now())) / 60000))} min`;
   el.innerHTML = `<span>${t} · ${done} von ${exN(W.exercises.length)}</span><span>${fmt(vol)} kg</span>`;
   $('#wseg').innerHTML = W.exercises.map((e, i) => `<i class="${exDone(e) ? 'done' : i === ci ? 'cur' : ''}"></i>`).join('');
+  // „Als Nächstes“ in der Leiste: aktueller Satz; beginnt eine neue Übung, steht ihr Name davor
+  const nx = $('#wnext'); if (!nx) return;
+  const [ni, nj] = curPos();
+  if (ni < 0){ nx.innerHTML = W.exercises.length ? '<span class="lbl">Als Nächstes</span><b>Alles erledigt · Speichern</b>' : ''; return; }
+  const e = W.exercises[ni], st = e.sets[nj], no = e.sets.slice(0, nj + 1).filter(isWork).length;
+  const kg = num(st.kg) ? fmt1(num(st.kg)).replace(',0', '') + ' kg × ' : '';
+  nx.innerHTML = `<span class="lbl">Als Nächstes</span><b>${e.sets.some(s => s.done) ? '' : esc(e.name) + ' · '}${st.warm ? 'Aufwärmen' : 'Satz ' + no} · ${kg}${esc(st.reps || '–')}</b>`;
 }
 function setVal(i, j, k, v){ const s = W.exercises[i].sets[j]; s[k] = v; s.edited = true; wMeta(); }
 function toggleSet(i, j){
@@ -2053,7 +2063,7 @@ function drawWorkout(){
     <button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push(exFor(x.name,x.from?(x.from===x.to?String(x.from):x.from+'-'+x.to):'',x.sets)),back:drawWorkout})">+ Übung hinzufügen</button>
     <label class="f" style="margin-top:16px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     ${W.id ? `<div class="btns"><button class="btn danger" onclick="deleteWorkout()">Einheit löschen</button></div>` : ''}
-    </div><div class="wbar"><div class="wline"><i id="wline"></i></div><div class="wrow"><div id="restbar" class="restbar"></div><span id="autot">${autotHtml()}</span><button class="btn wsave" onclick="saveWorkout()">Speichern</button></div></div>`);
+    </div><div class="wbar"><div class="wline"><i id="wline"></i></div><div class="wnext" id="wnext"></div><div class="wrow"><div id="restbar" class="restbar"></div><span id="autot">${autotHtml()}</span><button class="btn wsave" onclick="saveWorkout()">Speichern</button></div></div>`);
   tickRest(); wMeta(); saveDraft();
 }
 function removeSet(i, j){ W.exercises[i].sets.splice(j, 1); W.exercises[i].menu = false; drawWorkout(); }

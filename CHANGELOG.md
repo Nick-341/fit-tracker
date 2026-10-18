@@ -7,6 +7,7 @@
 - Einheit: Satz abhaken, Sätze mit Werten vom letzten Mal vorausgefüllt, erledigte Übungen klappen zu, Sprung zur nächsten; gespeichert werden abgehakte und geänderte Sätze, Hinweis mit Rückgängig für Sätze ohne Haken
 - Einheit: Aufwärmsätze als eigener Bereich („W“), zählen nicht für Volumen, Bestwerte, XP und Übungsfortschritt (gespeichert als warm: true)
 - Einheit: Steigerung vorausgefüllt (+2,5 kg, Wdh. aufs untere Ziel), wenn das obere Ziel geschafft wurde, mit Hinweiszeile
+- Einheit: „Als Nächstes“ in der Pausenleiste (nächster Satz, bei neuer Übung mit Namen)
 - Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026

@@ -273,6 +273,18 @@ def flow_steigerung(ctx):
     check(pg.query_selector('.prog') is None and pg.input_value('.setrow >> nth=0 >> input >> nth=0') == '84', 'Ohne Wiederholungsziel keine Steigerung')
     pg.evaluate("clearDraft(); closeSheet()"); return pg
 
+def flow_als_naechstes(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
+    check(pg.inner_text('#wnext b') == 'Bankdrücken · Satz 1 · 86,5 kg × 6', 'Als Nächstes: erster Satz mit Übungsname')
+    pg.click('.chk >> nth=0'); pg.wait_for_timeout(200)
+    check(pg.inner_text('#wnext b') == 'Satz 2 · 86,5 kg × 6', 'Als Nächstes: nächster Satz')
+    for k in range(3): pg.click('.setrow:not(.done) .chk >> nth=0')
+    pg.wait_for_timeout(300)
+    check(pg.inner_text('#wnext b') == 'Rudern am Kabel · Satz 1 · 55 kg × 10', 'Als Nächstes: nach letzter Übung die nächste mit Namen')
+    shot(pg, 'training_als_naechstes')
+    pg.evaluate("stopRest(); clearDraft(); closeSheet()"); return pg
+
 def flow_ziel(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
@@ -416,7 +428,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():
