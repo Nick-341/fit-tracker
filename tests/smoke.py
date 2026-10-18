@@ -184,8 +184,11 @@ def flow_training(ctx):
     check(pg.inner_text('.board .lbl') .lower() == 'als nächstes', 'Training: Tafel „Als Nächstes“')
     bottom_free(pg, 'Training')
     pg.click('.board >> text=Starten'); pg.wait_for_timeout(500)
-    pg.fill('.setrow >> nth=0 >> input >> nth=1', '8'); pg.dispatch_event('.setrow >> nth=0 >> input >> nth=1', 'change'); pg.wait_for_timeout(600)
-    check(pg.evaluate('TM.end > 0'), 'Auto-Timer startet nach Satz')
+    check(pg.input_value('.setrow >> nth=0 >> input >> nth=0') == '84' and pg.input_value('.setrow >> nth=0 >> input >> nth=1') == '8', 'Sätze mit Werten vom letzten Mal vorausgefüllt')
+    check(pg.query_selector('.setrow.cur .chk.cur') is not None, 'Aktueller Satz hervorgehoben')
+    pg.click('.chk >> nth=0'); pg.wait_for_timeout(400)
+    check(pg.query_selector('.chk.on') is not None, 'Satz abgehakt')
+    check(pg.evaluate('TM.end > 0'), 'Auto-Timer startet nach Abhaken')
     pg.click('.restbar >> text=+30 s'); check(pg.evaluate('TM.dur') == 120, 'Pause +30 s')
     pg.click('.rtime'); pg.click('.restbar >> text=−15'); check(pg.evaluate('TM.dur') == 105, 'Tipp auf Restzeit: −15 s')
     shot(pg, 'training_einheit')
@@ -204,10 +207,20 @@ def flow_training(ctx):
     pg.click('text=Fortsetzen'); pg.wait_for_timeout(500)
     pg.click('.autot'); pg.wait_for_timeout(200)
     pg.evaluate('stopRest()')
-    pg.fill('.setrow >> nth=1 >> input >> nth=1', '7'); pg.dispatch_event('.setrow >> nth=1 >> input >> nth=1', 'change'); pg.wait_for_timeout(300)
+    pg.click('.chk >> nth=1'); pg.wait_for_timeout(300)
     check(not pg.evaluate('TM.end > 0'), 'Auto-Timer abschaltbar')
+    pg.click('.chk >> nth=1'); pg.wait_for_timeout(200)
+    check(not pg.evaluate('W.exercises[0].sets[1].done'), 'Erneutes Tippen setzt Satz zurück')
+    pg.click('.chk >> nth=1'); pg.click('.chk >> nth=2'); pg.click('.chk >> nth=3'); pg.wait_for_timeout(300)
+    check(pg.query_selector('.exdone') is not None and '4 Sätze' in pg.inner_text('.exdone'), 'Erledigte Übung klappt zusammen')
+    check(pg.query_selector('#wseg i.done') is not None and pg.query_selector('#wseg i.cur') is not None, 'Segmente: erledigt und aktuell')
+    shot(pg, 'training_abgehakt')
     pg.click('.wsave'); pg.wait_for_timeout(500)
     check('gespeichert' in toast(pg), 'Einheit speichern')
+    check('ohne Haken nicht gespeichert' in pg.inner_text('#undo'), 'Hinweis: Sätze ohne Haken nicht gespeichert')
+    n = pg.evaluate("Object.values(S.wos).at(-1).data.exercises.length")
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(600)
+    check(pg.evaluate("Object.values(S.wos).at(-1).data.exercises.length") > n, 'Rückgängig nimmt Sätze ohne Haken mit auf')
     pg.click('.lhead >> text=Fortschritt'); pg.wait_for_timeout(500); pg.click('#sheetBody .row.tap >> nth=0'); pg.wait_for_timeout(300)
     shot(pg, 'training_fortschritt'); close(pg)
     pg.click('.trow2 >> nth=0'); pg.wait_for_timeout(300)
@@ -216,6 +229,13 @@ def flow_training(ctx):
     pg.click('#liblist .plus >> nth=0'); pg.wait_for_timeout(200); shot(pg, 'training_bibliothek')
     check(pg.query_selector('.presets') is not None, 'Übungsbibliothek mit Vorgaben')
     close(pg); return pg
+
+def flow_start_von_heute(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("S.day = addDays(today(), -3); render()"); pg.wait_for_timeout(500)
+    pg.click('.tile >> text=Starten'); pg.wait_for_timeout(600)
+    check(len(pg.query_selector_all('.ex')) == 2, 'Start von Heute: Übungen des Trainingstags geladen')
+    pg.evaluate("clearDraft(); closeSheet()"); return pg
 
 def flow_ziel(ctx):
     pg = open_app(ctx)
@@ -360,7 +380,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():

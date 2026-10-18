@@ -4,6 +4,8 @@
 - Design: Entwürfe 1.6.1
 - Suche: Tastatur öffnet sofort, Suchfeld bleibt oben und über der Tastatur sichtbar, Korbleiste weicht der Tastatur
 - Training: Wiederholungsziel pro Übung optional (leer = kein Ziel)
+- Einheit: Satz abhaken, Sätze mit Werten vom letzten Mal vorausgefüllt, erledigte Übungen klappen zu, Sprung zur nächsten; gespeichert werden abgehakte und geänderte Sätze, Hinweis mit Rückgängig für Sätze ohne Haken
+- Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026
 - Heute: Trainingsname in der Kachel bricht nicht mehr mitten im Wort um (18 px, einzeilig mit „…“), „Wochenrückblick“ einzeilig
