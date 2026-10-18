@@ -89,11 +89,11 @@ def flow_heute(ctx):
     pg.evaluate("(()=>{const o=Date.prototype.toLocaleDateString;Date.prototype.toLocaleDateString=function(...a){return o.apply(this,a).replace(/,/g,'')}})()")
     pg.click('#prev'); pg.wait_for_timeout(400)
     check('undefined' not in pg.inner_text('#dayl'), 'Datum "Gestern" ohne "undefined" (Safari-Format)')
-    pg.click('#dayl'); pg.wait_for_timeout(400)
+    pg.evaluate("S.day=today();render()"); pg.wait_for_timeout(400)
     shot(pg, 'heute', True)
     pg.click('.wcol >> nth=0'); pg.wait_for_timeout(400)
     check(pg.evaluate('wd(S.day)') == 0, 'Tipp auf Wochentag springt dorthin')
-    pg.click('#dayl'); pg.wait_for_timeout(400)
+    pg.evaluate("S.day=today();render()"); pg.wait_for_timeout(400)
     pg.click('.pline'); pg.wait_for_timeout(400); shot(pg, 'heute_partner')
     check(pg.query_selector('#sheetBody .kudos') is not None, 'Partnertag mit Kudos öffnet')
     close(pg)
@@ -114,6 +114,33 @@ def flow_heute_faelle(ctx):
     check(pg.query_selector('.wdot.pa') is None and 'privat' in pg.inner_text('.pline'), 'Ohne Freigaben: nur eigene Reihe')
     pg.evaluate("S.partner = null; render()"); pg.wait_for_timeout(500); shot(pg, 'heute_ohne_partner')
     check(pg.query_selector('.wdot.pa') is None and 'Verbinde' in pg.inner_text('.pline'), 'Ohne Partner: nur eigene Reihe')
+    return pg
+
+def flow_kalender(ctx):
+    pg = open_app(ctx)
+    pg.click('#dayl'); pg.wait_for_timeout(600); shot(pg, 'kalender')
+    mon = pg.evaluate("MONTHS[new Date().getMonth()]")
+    check(pg.inner_text('.cmonth') == mon, 'Kalender öffnet mit dem aktuellen Monat')
+    check(pg.query_selector('.cday.tdy') is not None and pg.query_selector('.cday.ok, .cday.lg') is not None, 'Kalender: heute markiert, geloggte Tage')
+    check(pg.query_selector('.cday.tr') is not None, 'Kalender: Trainingsstrich')
+    check(pg.is_disabled('[aria-label="Nächster Monat"]'), 'Kalender: Zukunft deaktiviert')
+    pg.click('[aria-label="Vorheriger Monat"]'); pg.wait_for_timeout(500)
+    check(pg.inner_text('.cmonth').startswith(pg.evaluate("MONTHS[(new Date().getMonth()+11)%12]")), 'Kalender: Monatswechsel zurück')
+    pg.click('[aria-label="Nächster Monat"]'); pg.wait_for_timeout(500)
+    pg.click('.cday:not(.fut) >> nth=0'); pg.wait_for_timeout(400)
+    check(pg.evaluate("S.day.endsWith('-01')") and not pg.evaluate('sheetOpen()'), 'Tipp auf einen Tag springt dorthin')
+    pg.click('#dayl'); pg.wait_for_timeout(500); pg.click('text=Zu heute'); pg.wait_for_timeout(300)
+    check(pg.evaluate('S.day === today()'), '„Zu heute“')
+    ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
+    pg.click('#dayl'); pg.wait_for_timeout(500)
+    check(pg.query_selector('.cday.ok, .cday.lg') is not None, 'Offline: aktueller Monat aus dem Cache')
+    pg.click('[aria-label="Vorheriger Monat"]'); pg.wait_for_timeout(400)
+    check('offline nicht verfügbar' not in pg.inner_text('#sheetBody'), 'Offline: Vormonat vorab geladen')
+    pg.click('[aria-label="Vorheriger Monat"]'); pg.wait_for_timeout(400)
+    check('Dieser Monat ist offline nicht verfügbar.' in pg.inner_text('#sheetBody'), 'Offline: nicht geladener Monat mit Hinweis')
+    ctx.set_offline(False); close(pg)
+    pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(400); pg.click('#dayl'); pg.wait_for_timeout(500)
+    check(pg.query_selector('.cgrid') is not None, 'Kalender auch unter Essen')
     return pg
 
 def flow_essen_korb(ctx):
@@ -531,7 +558,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():

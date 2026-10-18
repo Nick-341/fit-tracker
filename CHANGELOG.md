@@ -12,6 +12,7 @@
 - Essen: Mengen-Sheet mit Zahlenfeld (±10 g bzw. ±0,5 Portion), Live-Nährwerten und Mahlzeit; Korb leer „Eintragen“, Korb voll „In den Korb“, Eintrag bearbeiten „Speichern“. Korb- und Portionsmengen ebenfalls über das Zahlenfeld
 - Körper: Gewicht über das Zahlenfeld (letzter Wert, ±0,1), Maße als Liste mit Zahlenfeld (±0,5, „Weiter“ zum nächsten Maß)
 - Rückgängig statt Nachfragen: Einträge, Sätze, Übungen, Einheiten, Gewicht und Maße werden ohne Dialog gelöscht, 5 s „Rückgängig“; Löschen erst nach Ablauf oder beim Verlassen der Ansicht, offline mit der Warteschlange
+- Kalender: Tipp auf das Datum (Heute, Essen) öffnet die Monatsansicht mit „im Ziel“, „geloggt“ und Training, Monatsbilanz, offline aus dem Cache
 - Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026

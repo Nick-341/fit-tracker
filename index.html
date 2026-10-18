@@ -367,6 +367,25 @@ body.npopen .amtbtn{display:none}
 .nfbig{width:100%;min-height:52px;font-size:20px;text-align:left;padding:0 16px;border-color:var(--line)}
 .nf.gin{width:76px;min-height:40px;border-color:var(--line)}
 
+/* Kalender */
+.chead{display:flex;align-items:center;gap:8px;margin:4px 0 16px}
+.cmonth{flex:1;font-size:34px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnav{width:44px;height:44px;border:0;border-radius:var(--r-btn);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.cnav:disabled{opacity:.35}
+.cgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px 4px;justify-items:center;text-align:center}
+.cgrid .lbl{padding-bottom:4px}
+.cday{position:relative;width:46px;height:46px;max-width:100%;border-radius:50%;border:2px solid transparent;background:var(--surface);color:var(--ink);font-weight:900;font-size:17px;display:flex;align-items:center;justify-content:center;padding:0}
+.cday.ok{background:var(--accent);color:var(--on-accent)}
+.cday.lg{border-color:var(--accent);background:none}
+.cday.tdy{border-color:var(--ink)}
+.cday.tr::after{content:'';position:absolute;bottom:8px;left:50%;width:14px;height:3px;margin-left:-7px;border-radius:2px;background:currentColor}
+.cday.fut{background:none;color:var(--line)}
+.clegend{display:flex;gap:16px;flex-wrap:wrap;margin:16px 4px 12px;font-size:14px;color:var(--muted)}
+.clegend span{display:flex;align-items:center;gap:8px}
+.clegend i{display:inline-block;width:14px;height:14px;border-radius:7px}
+.clegend .lok{background:var(--accent)}.clegend .llg{border:2px solid var(--accent)}.clegend .ltr{width:14px;height:3px;border-radius:2px;background:var(--ink)}
+.cboard{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px 20px}
+
 /* Zahlenfeld */
 .np{position:fixed;left:0;right:0;bottom:0;z-index:24;background:var(--surface);border-radius:var(--r-board) var(--r-board) 0 0;padding:16px 12px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 32px rgba(0,0,0,.2);display:none;max-width:560px;margin:0 auto}
 .np.show{display:block}
@@ -520,7 +539,7 @@ body.fixbar #toast{bottom:calc(152px + env(safe-area-inset-bottom,0px))}
   <div>
     <div class="daynav" id="daynav">
       <button id="prev" aria-label="Vorheriger Tag"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
-      <button id="dayl" aria-label="Zu heute springen"></button>
+      <button id="dayl" aria-label="Kalender öffnen"></button>
       <button id="next" aria-label="Nächster Tag"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
     <h1 id="ttl">Heute</h1>
@@ -1209,6 +1228,53 @@ const toggleKudos = run(async (key, day) => {
 });
 const KUDOS_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 0 1.5.8 2.5 1.8 2.5C11 7.5 11 5.5 12 3z" fill="currentColor"/></svg>';
 const kudosBtn = (key, day, on, what = '') => `<button class="kudos ${on ? 'on' : ''}" onclick="event.stopPropagation();toggleKudos('${key}','${day}')" aria-pressed="${on}">${KUDOS_ICON}${on ? 'Kudos' + (what ? ' für ' + esc(what) : '') + ' gegeben' : 'Kudos' + (what ? ' für ' + esc(what) : ' für heute')}</button>`;
+
+/* ================= Kalender ================= */
+// Monatsansicht zum Springen. Daten pro Monat über q (gecacht, offline verfügbar). „Im Ziel“ wie Level-System und Wochenleiste.
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+let CAL = null;
+const monthStart = s => s.slice(0, 8) + '01';
+const monthEnd = s => { const d = new Date(s.slice(0, 4), +s.slice(5, 7), 0); return ds(d); };
+const addMonths = (s, n) => { const d = new Date(+s.slice(0, 4), +s.slice(5, 7) - 1 + n, 1, 12); return ds(d); };
+async function calLoad(m){
+  const from = m, to = monthEnd(m), uid = S.user.id;
+  const cached = ['log', 'workout'].every(k => cacheGet([k, uid, from, to].join('|')));
+  const [logs, wos] = await Promise.all([q('log', uid, from, to), q('workout', uid, from, to)]);
+  return { logs, wos, missing: !!S.offline && !cached };
+}
+const openCalendar = run(async () => {
+  CAL = { m: monthStart(S.day) };
+  openSheet('<p class="muted">Lädt …</p>');
+  CAL.data = await calLoad(CAL.m);
+  calLoad(addMonths(CAL.m, -1)).catch(() => {}); // Vormonat vorab laden (auch für offline)
+  drawCalendar();
+});
+const calMove = run(async n => { CAL.m = addMonths(CAL.m, n); CAL.data = await calLoad(CAL.m); drawCalendar(); });
+function calJump(d){ S.day = d; closeSheet(); render(); }
+function drawCalendar(){
+  const m = CAL.m, td = today(), end = monthEnd(m), D = CAL.data;
+  const first = wd(m), n = +end.slice(8);
+  const days = Array.from({ length: n }, (_, i) => m.slice(0, 8) + z(i + 1));
+  let inZ = 0, logged = 0;
+  const cell = d => {
+    if (d > td) return `<span class="cday fut">${+d.slice(8)}</span>`;
+    const kcal = sum(D.logs.filter(l => l.day === d)).kcal, tr = D.wos.some(w => w.day === d), tgt = targetFor(S.me, d, tr);
+    const lg = kcal >= (tgt ? tgt.kcal * 0.5 : 800), ok = inTarget(S.me, d, kcal, tr);
+    if (lg) logged++; if (ok) inZ++;
+    return `<button class="cday ${ok ? 'ok' : lg ? 'lg' : ''} ${d === td ? 'tdy' : ''} ${tr ? 'tr' : ''}" onclick="calJump('${d}')" aria-label="${+d.slice(8)}. ${MONTHS[+m.slice(5, 7) - 1]}${ok ? ', im Ziel' : lg ? ', geloggt' : ''}${tr ? ', Training' : ''}">${+d.slice(8)}</button>`;
+  };
+  const grid = D.missing ? '<div class="note" style="margin-top:12px">Dieser Monat ist offline nicht verfügbar.</div>'
+    : `<div class="cgrid">${WD.map(w => `<span class="lbl">${w}</span>`).join('')}${'<span></span>'.repeat(first)}${days.map(cell).join('')}</div>`;
+  const elapsed = days.filter(d => d <= td).length, trains = new Set(D.wos.map(w => w.day)).size;
+  openSheet(`<div class="sh-head"><span class="lbl">Springe zu einem Tag</span><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <div class="chead"><h2 class="cmonth">${MONTHS[+m.slice(5, 7) - 1]}${m.slice(0, 4) !== td.slice(0, 4) ? ' ' + m.slice(0, 4) : ''}</h2>
+      <button class="cnav" aria-label="Vorheriger Monat" onclick="calMove(-1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="cnav" aria-label="Nächster Monat" ${addMonths(m, 1) > td ? 'disabled' : ''} onclick="calMove(1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
+    ${grid}
+    ${D.missing ? '' : `<div class="clegend"><span><i class="lok"></i>Im Ziel</span><span><i class="llg"></i>Geloggt</span><span><i class="ltr"></i>Training</span></div>
+    <div class="board cboard"><div><div class="lbl">Im Ziel</div><b class="num n28">${inZ}</b><span class="unit">/${elapsed}</span></div><div><div class="lbl">Geloggt</div><b class="num n28">${logged}</b><span class="unit">/${elapsed}</span></div><div><div class="lbl">Training</div><b class="num n28">${trains}</b></div></div>`}
+    <div class="btns"><button class="btn full big" onclick="calJump(today())">Zu heute</button></div>`);
+}
 
 /* ================= Zahlenfeld ================= */
 // Eigenes Zahlenfeld statt System-Tastatur. Ersetzt die untere Leiste, solange es offen ist.
@@ -2575,7 +2641,7 @@ async function init(){
 }
 $('#prev').onclick = () => { S.day = addDays(S.day, -1); render(); };
 $('#next').onclick = () => { if (S.day < today()){ S.day = addDays(S.day, 1); render(); } };
-$('#dayl').onclick = () => { S.day = today(); render(); };
+$('#dayl').onclick = () => { if (['heute', 'essen'].includes(S.tab)) openCalendar(); else { S.day = today(); render(); } };
 $('#tabs').onclick = e => { const b = e.target.closest('button'); if (b){ S.tab = b.dataset.tab; render(); window.scrollTo(0, 0); } };
 let lastSeen = today();
 document.addEventListener('visibilitychange', () => {
