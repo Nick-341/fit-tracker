@@ -405,6 +405,27 @@ def flow_zahlenfeld(ctx):
     check(pg.evaluate('W.exercises[0].sets[0].kg') == '92,5' and pg.evaluate('num(W.exercises[0].sets[0].kg)') == 92.5, 'Wert mit Komma gespeichert')
     pg.evaluate("stopRest(); clearDraft(); closeSheet()"); return pg
 
+def flow_satz_loeschen(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
+    pg.click('.exbtns >> text=Aufwärmsatz >> nth=0'); pg.wait_for_timeout(200)  # versehentlich angelegt
+    b = pg.query_selector('.setrow.warm .sn').bounding_box()
+    check(b['width'] >= 44 and b['height'] >= 44 and pg.get_attribute('.setrow.warm .sn', 'aria-label') == 'Aufwärmsatz 1, Optionen', 'Satznummer: 44 × 44 px und aria-label')
+    pg.click('.setrow.warm .sn'); pg.wait_for_timeout(200); shot(pg, 'satz_menue')
+    check(pg.is_visible('#act >> text=Satz löschen') and pg.query_selector('#sheetBody .ex') is not None, 'Tipp auf „W“ öffnet Menü über der Einheit')
+    pg.click('#act >> text=Satz löschen'); pg.wait_for_timeout(300)
+    check(pg.query_selector('.setrow.warm') is None and 'Satz gelöscht' in pg.inner_text('#undo'), 'Aufwärmsatz gelöscht, Leiste „Satz gelöscht“')
+    r = pg.evaluate("(()=>{const u=document.querySelector('#undo').getBoundingClientRect(),w=document.querySelector('.wbar').getBoundingClientRect();return u.bottom<=w.top})()")
+    check(r, 'Leiste über der Pausenleiste')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
+    check(pg.query_selector('.setrow.warm') is not None, 'Aufwärmsatz wiederhergestellt')
+    pg.click('.ex >> nth=0 >> [aria-label="Satz 2, Optionen"]'); pg.click('#act >> text=Satz löschen'); pg.wait_for_timeout(300)
+    nums = pg.eval_on_selector_all('.ex >> nth=0 >> .setrow:not(.warm) .sn', 'els => els.map(e => e.textContent)')
+    check(nums == ['1', '2', '3'], 'Satznummern rücken nach')
+    pg.click('.setrow.warm .sn'); pg.click('#act >> text=Abbrechen'); pg.wait_for_timeout(100)
+    check(not pg.is_visible('#act .actcard') and pg.query_selector('.setrow.warm') is not None, 'Abbrechen schließt das Menü')
+    pg.evaluate("commitUndo(); clearDraft(); closeSheet()"); return pg
+
 def flow_ziel(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
@@ -480,7 +501,7 @@ def flow_koerper(ctx):
     bottom_free(pg, 'Körper')
     # unter 7 Wiegungen: keine Trendlinie; große Lücken: Linie unterbrochen
     pg.evaluate("S.wr='4w'; S.day=addDays(today(),-10); render()"); pg.wait_for_timeout(500)
-    check(pg.query_selector('.bchart polyline') is None and 'Trend ab 7 Wiegungen' in pg.inner_text('.board'), 'Unter 7 Wiegungen: Hinweis statt Trendlinie')
+    check(pg.query_selector('.bchart polyline') is not None, 'Trendlinie schon ab 3 Wiegungen')
     pg.evaluate("(async()=>{for(let i=40;i<=60;i+=2) await add('weight', addDays(today(),-i), {kg: 88 - i*0.01}); S.day=today(); S.wr='3m'; render();})()"); pg.wait_for_timeout(900)
     check(len(pg.query_selector_all('.bchart polyline')) == 2 and 'NaN' not in pg.inner_html('.bchart'), 'Große Lücke: Trendlinie unterbrochen, keine Fehler')
     shot(pg, 'koerper_luecke')
@@ -565,6 +586,32 @@ def flow_umbruch(ctx):
     pg.evaluate('closeSheet(); stopRest(); clearDraft()')
     return pg
 
+def flow_trend(ctx):
+    pg = open_app(ctx)
+    def setw(days, label):
+        pg.evaluate(f"""(async()=>{{const ws=await q('weight',S.user.id,null,null); for(const w of ws) await del(w.id);
+          for(const i of {days}) await add('weight', addDays(today(),-i), {{kg: Math.round((80 - i*0.04 + (i%3)*0.3)*10)/10}});
+          S.tab='koerper'; S.wr='{'3m' if max(days) > 28 else '4w'}'; S.day=today(); await render();}})()"""); pg.wait_for_timeout(900)
+        info = pg.evaluate("""(()=>{return {
+          lines: document.querySelectorAll('.bchart polyline').length, dots: document.querySelectorAll('.bchart .wp').length,
+          big: document.querySelector('.kbig .num').textContent, tag: document.querySelector('.bchart .tg')?.textContent || '',
+          pill: document.querySelector('.tpill')?.textContent || '', board: document.querySelector('.board').innerText,
+          stroke: (()=>{const l=document.querySelector('.bchart polyline');return l?getComputedStyle(l).stroke+'|'+getComputedStyle(l).strokeWidth:''})(),
+          order: (()=>{const svg=document.querySelector('.bchart');const a=[...svg.children];const l=svg.querySelector('polyline'),d=svg.querySelector('.wp');return l&&d?a.indexOf(l)>a.indexOf(d):null})()}})()""")
+        shot(pg, 'trend_' + label)
+        return info
+    i = setw(list(range(0, 28)), 'taeglich')
+    check(i['lines'] == 1 and i['big'] == i['tag'] and i['stroke'] == 'rgb(255, 184, 28)|3px' and i['order'], 'Tägliche Wiegungen: Linie über den Punkten, 3 px gelb, Zahl = Schild')
+    i = setw([27, 24, 22, 20, 17, 13, 10, 8, 6, 3, 1], 'woechentlich')
+    check(i['lines'] == 1 and i['big'] == i['tag'], '2–3 Wiegungen pro Woche: durchgehende Linie')
+    i = setw([60, 58, 55, 52, 50, 30, 27, 25, 3, 1], 'luecke')
+    check(i['lines'] == 3 and 'NaN' not in i['board'], 'Lücken über 14 Tage unterbrechen die Linie (2 Lücken = 3 Stücke)')
+    i = setw([10, 3], 'zwei')
+    check(i['lines'] == 0 and i['dots'] == 2 and 'Trend ab 3 Wiegungen' in i['board'] and not i['pill'], 'Nur 2 Wiegungen: Punkte und Hinweis')
+    i = setw([12, 6, 1], 'drei')
+    check(i['lines'] == 1 and i['big'] == i['tag'] and i['pill'], '3 Wiegungen: Linie, Zahl, Schild und Trend-Zeile')
+    return pg
+
 def flow_hell_dunkel(ctx):
     pg = open_app(ctx)
     for t in ['light', 'dark']:
@@ -572,8 +619,8 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
-         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_ziel, flow_dran,
+         flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():
     filt = sys.argv[1] if len(sys.argv) > 1 else ''

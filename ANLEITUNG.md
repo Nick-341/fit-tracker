@@ -3,6 +3,8 @@
 Spotter ist eure private Fitness- und Ernährungs-App für zwei. Öffne sie in Safari und füge sie über „Teilen → Zum Home-Bildschirm“ hinzu.
 Nach jedem Update die App einmal mit Internet öffnen, damit die neue Version geladen wird.
 
+**Neu in 1.6.1.1**: Sätze löschst du über einen Tipp auf die Satznummer („W“, „1“, „2“ …) und „Satz löschen“, mit Rückgängig. Die Trendlinie unter Körper erscheint schon ab 3 Wiegungen.
+
 **Neu in 1.6.1**: Training & Komfort.
 - **Satz abhaken**: In der Einheit sind alle Sätze mit deinen Werten vom letzten Mal vorausgefüllt (grau). Tippe auf den Haken, um einen Satz zu bestätigen. Das startet die Pause, wenn der Auto-Timer an ist. Noch einmal tippen nimmt den Haken weg. Ist eine Übung fertig, klappt sie zusammen und es geht mit der nächsten weiter. Gespeichert werden abgehakte und von dir geänderte Sätze. Für Sätze ohne Haken erscheint „… Sätze ohne Haken nicht gespeichert“ mit „Rückgängig“, falls du sie doch willst.
 - **Aufwärmsätze**: „Aufwärmsatz“ unter einer Übung fügt einen Satz „W“ hinzu. Er zählt nicht für Volumen, Bestwerte und XP.

@@ -1,6 +1,6 @@
 # Backlog Spotter
 
-Aktuelle Version: **1.6.1**
+Aktuelle Version: **1.6.1.1**
 
 ## Ideen für später
 - Feste Wochentage für Trainingstage („Plan des Tages“ fürs Training); bis dahin gilt für „Als Nächstes“ die Rotation
@@ -22,4 +22,4 @@ Aktuelle Version: **1.6.1**
 - Automatisches Abmelden als Standard (nur optional vorhanden)
 
 ## Erledigt
-1.0 Grundversion · 1.1 Design B, Hell/Dunkel, Level-System · 1.2 Name Spotter, Logo, Trainingstag-Editor mit Bibliothek · 1.4 Pausentimer, Kopieren, Kudos, Profilfoto, Freigaben, Sicherheit, Übungsfortschritt, Wochenrückblick, Changelog · 1.5 Offline-Modus, Trainingsentwurf, Sammelkorb, Dauer-Scan, Kopieren mit Ziel, Einträge bearbeiten, Export, SRI · 1.5.1 Mahlzeiten an Partner schicken, Auto-Timer abschaltbar · 1.5.2 Datum „Gestern“ in Safari, Pausentimer und Speichern in gemeinsamer Leiste · 1.6.0 Neuer Look (Anzeigetafel, Wochenleiste, Mahlzeiten-Liste, Suche nach Mahlzeit sortiert mit Schnell-Plus, Trendtafel, gruppiertes Profil, „Als Nächstes“ im Training) · 1.6.0.1 Umbrüche mitten im Wort, Suchfeld und Essen-Tafel repariert, kleine iPhones · 1.6.1 Satz abhaken, Aufwärmsätze, Steigerung, Zahlenfeld, Mengen-Sheet, Rückgängig, Kalender, lesbarer Gewichtstrend
+1.0 Grundversion · 1.1 Design B, Hell/Dunkel, Level-System · 1.2 Name Spotter, Logo, Trainingstag-Editor mit Bibliothek · 1.4 Pausentimer, Kopieren, Kudos, Profilfoto, Freigaben, Sicherheit, Übungsfortschritt, Wochenrückblick, Changelog · 1.5 Offline-Modus, Trainingsentwurf, Sammelkorb, Dauer-Scan, Kopieren mit Ziel, Einträge bearbeiten, Export, SRI · 1.5.1 Mahlzeiten an Partner schicken, Auto-Timer abschaltbar · 1.5.2 Datum „Gestern“ in Safari, Pausentimer und Speichern in gemeinsamer Leiste · 1.6.0 Neuer Look (Anzeigetafel, Wochenleiste, Mahlzeiten-Liste, Suche nach Mahlzeit sortiert mit Schnell-Plus, Trendtafel, gruppiertes Profil, „Als Nächstes“ im Training) · 1.6.0.1 Umbrüche mitten im Wort, Suchfeld und Essen-Tafel repariert, kleine iPhones · 1.6.1 Satz abhaken, Aufwärmsätze, Steigerung, Zahlenfeld, Mengen-Sheet, Rückgängig, Kalender, lesbarer Gewichtstrend · 1.6.1.1 Satz löschen über die Satznummer, Trendlinie ab 3 Wiegungen

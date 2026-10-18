@@ -1,7 +1,7 @@
 // Spotter Service Worker: App offline verfügbar machen.
 // Eigene Dateien: erst Netz, dann Speicher. Bibliotheken und Schriften: erst Speicher.
 // Daten (Supabase, Open Food Facts) werden nie hier gespeichert.
-const CACHE = 'spotter-v10';
+const CACHE = 'spotter-v11';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png', './icons/icon.svg'];
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js',

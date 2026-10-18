@@ -188,6 +188,12 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .bchart .ax{font:700 11px var(--f);fill:var(--board-muted)}
 .bchart .sv{font:800 12px var(--f);fill:var(--board-ink)}
 .bchart .tg{font:900 12px var(--f);fill:var(--on-accent);text-anchor:middle}
+.bchart .gl{stroke:var(--board-soft)}
+.bchart .wp{fill:#4A525C}
+.bchart .tl{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.bchart .sr{fill:var(--board);stroke:var(--accent);stroke-width:2.5}
+.bchart .ac{fill:var(--accent)}
+.parr{color:var(--accent)}
 .tpill{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
 .pill{display:inline-flex;align-items:center;gap:6px;background:var(--board-soft);border-radius:999px;padding:6px 14px;font-weight:800;font-size:15px;white-space:nowrap}
 .cdates{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--board-muted);padding-right:12%}
@@ -337,7 +343,14 @@ h3.sub{font-size:20px;margin-bottom:8px}
 .exname{min-width:0;text-overflow:ellipsis;border:0;background:none;padding:0;font-size:22px;font-weight:900;font-stretch:112%;min-height:36px}
 .exname:focus{border:0;box-shadow:inset 0 -2px 0 var(--accent)}
 .exsub{font-size:14px;color:var(--muted);margin-bottom:12px}
-.sethead,.setrow{display:grid;grid-template-columns:32px minmax(0,1fr) 64px 52px 44px;gap:8px;align-items:center}
+.sethead,.setrow{display:grid;grid-template-columns:44px minmax(0,1fr) 64px 52px 44px;gap:8px;align-items:center}
+.sn{min-width:44px;min-height:44px;border:0;background:none;color:inherit;font:inherit;font-weight:900;font-size:17px;text-align:left;padding:0 0 0 4px;margin-left:-4px;border-radius:var(--r-sm)}
+.sn:active{background:var(--soft)}
+#act{position:fixed;inset:0;z-index:26;display:none}
+#act.show{display:block}
+.actbg{position:absolute;inset:0;background:rgba(8,10,12,.45)}
+.actcard{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--bg);border-radius:var(--r-board) var(--r-board) 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;animation:up .2s ease-out}
+@media (prefers-reduced-motion:reduce){.actcard{animation:none}}
 .setrow{border-radius:var(--r-btn);margin:0 -8px;padding:4px 8px}
 .setrow.cur{background:var(--soft)}
 .chk{width:44px;height:44px;border-radius:var(--r-btn);border:2px solid var(--line);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;padding:0}
@@ -425,7 +438,6 @@ body.npopen .sheet-card{padding-bottom:calc(var(--nph,360px) + 16px)}
 .sethead{margin-bottom:4px}
 .sethead span:nth-child(3),.sethead span:nth-child(4){text-align:center}
 .setrow{min-height:52px}
-.setrow .n{font-weight:900;font-size:17px}
 .setrow .prev{font-size:14px;color:var(--muted);white-space:nowrap}
 
 .iconbtn.sm{min-width:32px;padding:4px}
@@ -567,6 +579,7 @@ body.fixbar #toast{bottom:calc(152px + env(safe-area-inset-bottom,0px))}
 <div id="toast" role="status"></div>
 <div id="undo"></div>
 <div id="numpad" class="np" role="group" aria-label="Zahlenfeld"></div>
+<div id="act"></div>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
@@ -1162,14 +1175,9 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.1.1';
 const CHANGELOG = [
-  ['Satz abhaken', 'Sätze sind mit deinen Werten vom letzten Mal vorausgefüllt. Ein Tipp auf den Haken bestätigt den Satz und startet die Pause, erledigte Übungen klappen zu.'],
-  ['Mehr Gewicht, wenn es Zeit ist', 'Hast du das obere Wiederholungsziel geschafft, schlägt Spotter 2,5 kg mehr vor. Aufwärmsätze haben einen eigenen Bereich und zählen nicht für Volumen, Bestwerte und XP.'],
-  ['Eigenes Zahlenfeld', 'Gewicht, Wiederholungen, Mengen und Maße tippst du mit großen Tasten und ± ein. „Weiter“ springt zum nächsten Feld, „Abhaken“ hakt den Satz direkt ab.'],
-  ['Rückgängig statt Nachfragen', 'Gelöscht wird ohne Rückfrage. Fünf Sekunden lang holst du alles mit „Rückgängig“ zurück.'],
-  ['Kalender und Trend', 'Tipp oben auf das Datum: Der Monat zeigt, wann du im Ziel warst. Unter Körper liest du jetzt direkt ab, wie viel sich dein Gewicht in welchem Zeitraum verändert hat.'],
-  ['Fehlerbehebungen', 'Die Suche bleibt beim Tippen über der Tastatur sichtbar. „Starten“ auf Heute lädt immer die Übungen des Trainingstags.']
+  ['Fehlerbehebungen', 'Sätze, auch Aufwärmsätze, löschst du jetzt über einen Tipp auf die Satznummer, mit Rückgängig. Die Trendlinie im Gewichtsdiagramm erscheint schon ab 3 Wiegungen und verbindet auch seltene Wiegungen.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
@@ -1289,6 +1297,19 @@ function drawCalendar(){
     <div class="board cboard"><div><div class="lbl">Im Ziel</div><b class="num n28">${inZ}</b><span class="unit">/${elapsed}</span></div><div><div class="lbl">Geloggt</div><b class="num n28">${logged}</b><span class="unit">/${elapsed}</span></div><div><div class="lbl">Training</div><b class="num n28">${trains}</b></div></div>`}
     <div class="btns"><button class="btn full big" onclick="calJump(today())">Zu heute</button></div>`);
 }
+
+/* ================= Aktionsmenü ================= */
+// Kleines Menü über dem aktuellen Sheet (z. B. Satz-Optionen), ohne das Sheet zu ersetzen
+let ACT = [];
+function actionMenu(title, items){
+  ACT = items;
+  $('#act').innerHTML = `<div class="actbg" onclick="actClose()"></div><div class="actcard" role="dialog" aria-label="${esc(title)}"><div class="lbl" style="margin:0 4px 12px">${esc(title)}</div>
+    ${items.map((it, k) => `<button class="btn full big ${it.warn ? 'danger' : 'ghost'}" onclick="actRun(${k})">${esc(it.label)}</button>`).join('')}
+    <button class="btn full big ghost" onclick="actClose()">Abbrechen</button></div>`;
+  $('#act').classList.add('show'); $('#act .actcard .btn').focus();
+}
+function actRun(k){ const it = ACT[k]; actClose(); if (it) it.fn(); }
+function actClose(){ $('#act').classList.remove('show'); $('#act').innerHTML = ''; }
 
 /* ================= Zahlenfeld ================= */
 // Eigenes Zahlenfeld statt System-Tastatur. Ersetzt die untere Leiste, solange es offen ist.
@@ -2238,7 +2259,8 @@ function toggleSet(i, j){
 }
 function setRow(i, j, s, cur, ls, no){
   const kgTxt = v => fmt1(num(v)).replace(',0', '');
-  return `<div class="setrow ${s.done ? 'done' : ''} ${cur ? 'cur' : ''} ${s.warm ? 'warm' : ''}"><span class="n">${s.warm ? 'W' : no}</span><span class="prev">${ls ? `${kgTxt(ls.kg)} × ${esc(ls.reps)}` : '–'}</span>
+  const wno = s.warm ? W.exercises[i].sets.slice(0, j + 1).filter(x => x.warm).length : 0;
+  return `<div class="setrow ${s.done ? 'done' : ''} ${cur ? 'cur' : ''} ${s.warm ? 'warm' : ''}"><button class="n sn" aria-label="${s.warm ? 'Aufwärmsatz ' + wno : 'Satz ' + no}, Optionen" onclick="setMenu(${i},${j},'${s.warm ? 'Aufwärmsatz ' + wno : 'Satz ' + no}')">${s.warm ? 'W' : no}</button><span class="prev">${ls ? `${kgTxt(ls.kg)} × ${esc(ls.reps)}` : '–'}</span>
     <button class="nf ${!s.done && !s.edited ? 'sug' : ''}" id="f${i}_${j}_kg" aria-label="Gewicht ${s.warm ? 'Aufwärmsatz' : 'Satz ' + no}: ${esc(String(s.kg).replace('.', ',')) || 'leer'} kg" onclick="npSet(${i},${j},'kg')">${esc(String(s.kg).replace('.', ',')) || '<span class="ph">kg</span>'}</button>
     <button class="nf ${!s.done && !s.edited ? 'sug' : ''}" id="f${i}_${j}_reps" aria-label="Wiederholungen ${s.warm ? 'Aufwärmsatz' : 'Satz ' + no}: ${esc(s.reps) || 'leer'}" onclick="npSet(${i},${j},'reps')">${esc(s.reps) || '<span class="ph">Wdh</span>'}</button>
     <button class="chk ${s.done ? 'on' : ''} ${cur ? 'cur' : ''}" aria-label="${s.done ? 'Haken entfernen' : 'Satz abhaken'}" aria-pressed="${!!s.done}" onclick="toggleSet(${i},${j})">${I_CHK}</button></div>`;
@@ -2269,8 +2291,9 @@ function drawWorkout(){
     </div><div class="wbar"><div class="wline"><i id="wline"></i></div><div class="wnext" id="wnext"></div><div class="wrow"><div id="restbar" class="restbar"></div><span id="autot">${autotHtml()}</span><button class="btn wsave" onclick="saveWorkout()">Speichern</button></div></div>`);
   tickRest(); wMeta(); saveDraft(); placeUndo();
 }
+function setMenu(i, j, title){ npClose(); actionMenu(title, [{ label: 'Satz löschen', warn: true, fn: () => removeSet(i, j) }]); }
 function removeSet(i, j){ const e = W.exercises[i], [st] = e.sets.splice(j, 1); e.menu = false; drawWorkout();
-  undoBar(st.warm ? 'Aufwärmsatz gelöscht' : 'Satz gelöscht', () => { e.sets.splice(j, 0, st); drawWorkout(); }, null, 'sheet'); }
+  undoBar('Satz gelöscht', () => { e.sets.splice(j, 0, st); drawWorkout(); }, null, 'sheet'); }
 function removeEx(i){ const [e] = W.exercises.splice(i, 1); e.menu = false; drawWorkout();
   undoBar(`${e.name || 'Übung'} gelöscht`, () => { W.exercises.splice(i, 0, e); drawWorkout(); }, null, 'sheet'); }
 function addSet(i){ const s = W.exercises[i].sets; const prev = workSets(W.exercises[i]).at(-1) || { kg:'', reps:'' }; s.push({ kg: prev.kg, reps: prev.reps, done: false }); W.exercises[i].open = true; drawWorkout(); }
@@ -2317,12 +2340,14 @@ function chart(pts, caption){
   </svg><div class="small muted">${caption || 'Punkte: Tageswerte. Linie: 7-Tage-Durchschnitt, der aussagekräftigere Wert.'}</div></div>`;
 }
 const WRANGE = [['4w','4 W',28,'in 4 Wochen','4 Wochen'],['3m','3 M',91,'in 3 Monaten','3 Monate'],['1j','1 J',365,'in 1 Jahr','1 Jahr'],['all','Alles',0,'insgesamt','gesamt']];
+const TREND_MIN = 3; // Trendlinie ab 3 Wiegungen im gewählten Zeitraum
 const shortDm = s => { const d = new Date(s + 'T12:00:00'); return d.getDate() + '. ' + MON[d.getMonth()].replace('.', ''); };
 // Trend-Diagramm: Achse rechts in ganzen kg, Ausschnitt mind. 2 kg, Daten mittig; Waage als Punkte, Trend (Ø 7 Tage) als Linie,
-// Startwert mit Ring und Zahl, Endwert als gelbes Schild. Unter 7 Wiegungen keine Trendlinie. Lücken über 14 Tage unterbrechen die Linie.
+// Startwert mit Ring und Zahl, Endwert als gelbes Schild. Linie ab 3 Wiegungen im Zeitraum, Lücken über 14 Tage unterbrechen sie.
+// Farben über CSS-Klassen, nicht als var() im SVG-Attribut (wird nicht überall aufgelöst).
 function boardChart(pts, from, to, label){
   if (!pts.length) return '<p class="small muted" style="margin:16px 0">Noch keine Wiegungen in diesem Zeitraum.</p>';
-  const Wd = 340, Ht = 150, T = 14, B = 10, PR = 300, showTrend = pts.length >= 7;
+  const Wd = 340, Ht = 150, T = 14, B = 10, PR = 300, showTrend = pts.length >= TREND_MIN;
   const vals = pts.flatMap(p => showTrend ? [p.v, p.avg] : [p.v]), mn = Math.min(...vals), mx = Math.max(...vals);
   let span = Math.max(2, Math.ceil(mx) - Math.floor(mn)), lo = Math.floor((mn + mx) / 2 - span / 2), hi = lo + span;
   if (mx > hi){ hi++; lo++; } if (mn < lo){ lo--; }
@@ -2331,17 +2356,17 @@ function boardChart(pts, from, to, label){
   const grid = []; for (let v = lo; v <= hi; v += step) grid.push(v);
   const segs = []; if (showTrend) pts.forEach((p, i) => { if (!i || daysBetween(pts[i - 1].day, p.day) > 14) segs.push([]); segs.at(-1).push(`${f1(X(p.day))},${f1(Y(p.avg))}`); });
   const s0 = pts[0], e = pts.at(-1), ex = X(e.day), ey = Y(e.avg), tag = fmt1(e.avg), tw = tag.length * 8 + 14;
-  return `<svg class="bchart" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="${showTrend ? `Gewichtstrend ${label}: von ${fmt1(s0.avg)} auf ${fmt1(e.avg)} kg` : `Wiegungen ${label}, Trend ab 7 Wiegungen`}">
-    ${grid.map(v => `<line x1="0" x2="${PR}" y1="${f1(Y(v))}" y2="${f1(Y(v))}" stroke="var(--board-soft)"/><text x="${PR + 10}" y="${f1(Y(v) + 4)}" class="ax">${v}</text>`).join('')}
-    ${pts.map(p => `<circle cx="${f1(X(p.day))}" cy="${f1(Y(p.v))}" r="2.4" fill="#4A525C"/>`).join('')}
-    ${showTrend ? `${segs.map(sg => `<polyline points="${sg.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
-      <circle cx="${f1(X(s0.day))}" cy="${f1(Y(s0.avg))}" r="5" fill="var(--board)" stroke="var(--accent)" stroke-width="2.5"/>
+  return `<svg class="bchart" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="${showTrend ? `Gewichtstrend ${label}: von ${fmt1(s0.avg)} auf ${fmt1(e.avg)} kg` : `Wiegungen ${label}, Trend ab ${TREND_MIN} Wiegungen`}">
+    ${grid.map(v => `<line x1="0" x2="${PR}" y1="${f1(Y(v))}" y2="${f1(Y(v))}" class="gl"/><text x="${PR + 10}" y="${f1(Y(v) + 4)}" class="ax">${v}</text>`).join('')}
+    ${pts.map(p => `<circle cx="${f1(X(p.day))}" cy="${f1(Y(p.v))}" r="2.4" class="wp"/>`).join('')}
+    ${showTrend ? `${segs.map(sg => `<polyline points="${sg.join(' ')}" class="tl"/>`).join('')}
+      <circle cx="${f1(X(s0.day))}" cy="${f1(Y(s0.avg))}" r="5" class="sr"/>
       <text x="${f1(Math.max(4, X(s0.day) - 4))}" y="${f1(Math.max(11, Y(s0.avg) - 10))}" class="sv">${fmt1(s0.avg)}</text>
-      <circle cx="${f1(ex)}" cy="${f1(ey)}" r="6" fill="var(--accent)"/>
-      <rect x="${f1(Math.min(PR - tw, ex - tw / 2))}" y="${f1(ey > Ht / 2 ? ey - 34 : ey + 12)}" width="${tw}" height="22" rx="6" fill="var(--accent)"/>
+      <circle cx="${f1(ex)}" cy="${f1(ey)}" r="6" class="ac"/>
+      <rect x="${f1(Math.min(PR - tw, ex - tw / 2))}" y="${f1(ey > Ht / 2 ? ey - 34 : ey + 12)}" width="${tw}" height="22" rx="6" class="ac"/>
       <text x="${f1(Math.min(PR - tw, ex - tw / 2) + tw / 2)}" y="${f1((ey > Ht / 2 ? ey - 34 : ey + 12) + 15.5)}" class="tg">${tag}</text>` : ''}</svg>
     <div class="cdates"><span>${shortDm(from)}</span><span>${shortDm(addDays(from, Math.round(days / 2)))}</span><span>${to === today() ? 'heute' : shortDm(to)}</span></div>
-    ${showTrend ? '<div class="clegend2"><span><i class="lt"></i>Trend</span><span><i class="lw"></i>Waage</span></div>' : '<p class="small muted" style="margin:8px 0 0">Trend ab 7 Wiegungen</p>'}`;
+    ${showTrend ? '<div class="clegend2"><span><i class="lt"></i>Trend</span><span><i class="lw"></i>Waage</span></div>' : `<p class="small muted" style="margin:8px 0 0">Trend ab ${TREND_MIN} Wiegungen</p>`}`;
 }
 async function rKoerper(){
   const uid = viewId(), mine = own();
@@ -2352,14 +2377,14 @@ async function rKoerper(){
   let h = '';
   if (hideW) h += privNote('das Gewicht');
   else {
-    const tr = trend(ws), from = rg[2] ? addDays(S.day, -rg[2]) : (tr[0]?.day || S.day), pts = tr.filter(p => p.day >= from), last = tr.at(-1);
+    const tr = trend(ws), from = rg[2] ? addDays(S.day, -rg[2]) : (tr[0]?.day || S.day), pts = tr.filter(p => p.day >= from), last = pts.at(-1) || tr.at(-1); // ein Trendwert für Zahl, Schild und Trend-Zeile
     // Trend-Zeile: Ø 7 Tage heute minus Ø 7 Tage zu Beginn des Zeitraums; unter 0,2 kg „stabil“
     let pill = '';
-    if (pts.length >= 7){
+    if (pts.length >= TREND_MIN){
       const s0 = pts[0], d = last.avg - s0.avg, span = Math.max(1, daysBetween(s0.day, last.day));
       const full = rg[2] && daysBetween(from, s0.day) <= 7, lbl = full || !rg[2] ? rg[3] : span < 14 ? `in ${span} Tagen` : `in ${Math.round(span / 7)} Wochen`;
       const pace = d / (span / 7), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '±') + fmt1(Math.abs(v));
-      pill = `<div class="tpill"><span class="pill">${Math.abs(d) < 0.2 ? `stabil ${lbl}` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d > 0 ? 'M12 19V5M6 11l6-6 6 6' : 'M12 5v14M6 13l6 6 6-6'}"/></svg>${fmt1(Math.abs(d))} kg ${lbl}`}</span><span class="small muted">ca. ${sg(pace)} kg pro Woche</span></div>`;
+      pill = `<div class="tpill"><span class="pill">${Math.abs(d) < 0.2 ? `stabil ${lbl}` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="parr"><path d="${d > 0 ? 'M12 19V5M6 11l6-6 6 6' : 'M12 5v14M6 13l6 6 6-6'}"/></svg>${fmt1(Math.abs(d))} kg ${lbl}`}</span><span class="small muted">ca. ${sg(pace)} kg pro Woche</span></div>`;
     }
     h += `<div class="board ${mine ? '' : 'pboard'}">
       <div class="bhead"><span class="lbl">Gewicht · Trend</span><span class="small muted">${lastW ? (tw ? `${dayLabel(S.day) === 'Heute' ? 'heute' : shortDate(S.day)} ${fmt1(tw.data.kg)} kg gewogen` : `zuletzt ${fmt1(lastW.data.kg)} kg am ${shortDate(lastW.day)}`) : 'noch nicht gewogen'}</span></div>

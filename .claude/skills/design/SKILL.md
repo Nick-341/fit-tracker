@@ -70,13 +70,14 @@ Löschen ohne Dialog. `softDel(id, label)` blendet den Datenbank-Eintrag sofort 
 - Gilt für Einträge, Sätze, Übungen, Einheiten, Gewicht und Maße. Trainingstage, Vorlagen, Abmelden und Verknüpfung lösen behalten die Nachfrage.
 
 ### Haken-Zustände (Satz abhaken)
-`.chk` 44 px: offen = Rand `--line` · aktueller Satz = Zeile `.setrow.cur` auf `--soft`, Haken mit Rand `--ink` · erledigt = `--accent` gefüllt, Haken `--on-accent` · Aufwärmsatz erledigt = Haken auf `--soft` (nicht gelb). Vorausgefüllte Werte (`.nf.sug`) in `--muted` auf `--soft`. Erledigte Übung klappt zu `.exdone` (60 px, gelber Haken, „4 Sätze · 3.120 kg“, Chevron).
+Satznummer `.sn` (44 × 44 px, `aria-label` „Satz 2, Optionen“) öffnet `actionMenu` mit „Satz löschen“. `.chk` 44 px: offen = Rand `--line` · aktueller Satz = Zeile `.setrow.cur` auf `--soft`, Haken mit Rand `--ink` · erledigt = `--accent` gefüllt, Haken `--on-accent` · Aufwärmsatz erledigt = Haken auf `--soft` (nicht gelb). Vorausgefüllte Werte (`.nf.sug`) in `--muted` auf `--soft`. Erledigte Übung klappt zu `.exdone` (60 px, gelber Haken, „4 Sätze · 3.120 kg“, Chevron).
 
 ### Trend-Diagramm (Körper)
 - Achse rechts in ganzen kg (11 px, 700, `--board-muted`), Hilfslinien `--board-soft`. Ausschnitt mindestens 2 kg, auf ganze kg gerundet, Daten mittig; bei mehr als 6 kg Beschriftung in größeren Schritten.
 - Waage: Punkte r 2,4 in #4A525C. Trend (Ø 7 Tage): Linie 3 px `--accent`, Lücken über 14 Tage unterbrechen die Linie. Startwert: kleiner Ring + Zahl. Endwert: gelbes Schild (`--accent`, Text `--on-accent`, 12 px, 900).
 - Datumsmarken unten: Anfang, Mitte, „heute“. Legende „— Trend“ und „• Waage“ (12 px). `role="img"` mit `aria-label` („Gewichtstrend 4 Wochen: von 76,6 auf 75,3 kg“).
-- Unter 7 Wiegungen keine Trendlinie, Hinweis „Trend ab 7 Wiegungen“.
+- Trendwert je Tag mit Wiegung = Mittel aller Wiegungen der letzten 7 Kalendertage inkl. dieses Tages. Linie ab 3 Wiegungen im Zeitraum (`TREND_MIN`), darunter nur Punkte und „Trend ab 3 Wiegungen“. Große Zahl, Endschild und Trend-Zeile nutzen denselben letzten Trendwert.
+- SVG-Farben über CSS-Klassen (`.tl`, `.wp`, `.ac` …), nie `var()` in SVG-Attributen.
 - Trend-Zeile unter der großen Zahl: Pill auf `--board-soft` mit Pfeil in `--accent` („1,3 kg in 4 Wochen“, unter 0,2 kg „stabil“) und daneben `--board-muted` „ca. −0,3 kg pro Woche“.
 
 ## Regeln

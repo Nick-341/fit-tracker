@@ -1,5 +1,10 @@
 # Changelog Spotter
 
+## 1.6.1.1 – 18.10.2026
+- Einheit: Tipp auf die Satznummer („W“, „1“, „2“ …, 44 × 44 px) öffnet ein Menü mit „Satz löschen“, danach „Satz gelöscht“ mit Rückgängig; Nummern rücken nach
+- Körper: Trendlinie ab 3 Wiegungen im Zeitraum (vorher 7), verbindet auch seltene Wiegungen, unterbrochen nur bei Lücken über 14 Tagen; große Zahl, Endschild und Trend-Zeile nutzen denselben Trendwert; Diagrammfarben über CSS statt SVG-Attribut
+- Test: Abläufe für Satz löschen und Trend mit täglichen, seltenen, lückenhaften und nur 2 Wiegungen
+
 ## 1.6.1 – 18.10.2026
 - Design: Entwürfe 1.6.1
 - Suche: Tastatur öffnet sofort, Suchfeld bleibt oben und über der Tastatur sichtbar, Korbleiste weicht der Tastatur
