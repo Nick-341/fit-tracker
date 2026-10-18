@@ -1778,8 +1778,9 @@ const EX_LIB = {
   'Core': [['Plank','Körpergewicht'],['Kabel-Crunches','Kabelzug'],['Hanging Leg Raises','Körpergewicht'],['Ab Wheel','Rad'],['Russian Twists','Körpergewicht'],['Pallof Press','Kabelzug']]
 };
 const PRESETS = [[3,8,8],[3,10,10],[3,12,12],[4,6,8],[3,8,12],[5,5,5]];
-const scheme = (s, f, t) => `${s} × ${f === t ? f : f + '–' + t}`;
-function splitReps(r){ const [f, t] = String(r || '10').split(/[-–]/).map(x => parseInt(x)); return { from: f || 10, to: t || f || 10 }; }
+const scheme = (s, f, t) => f ? `${s} × ${f === t ? f : f + '–' + t}` : `${s} Sätze`;
+// Wiederholungsziel ist optional: ohne Angabe bleibt from/to leer (kein Ziel, keine Steigerung)
+function splitReps(r){ const [f, t] = String(r || '').split(/[-–]/).map(x => parseInt(x)); return { from: f || '', to: t || f || '' }; }
 function knownScheme(name){
   const k = name.toLowerCase();
   for (const r of Object.values(S.rt || {})) for (const e of r.data.exercises) if (e.name.toLowerCase() === k){ const x = splitReps(e.reps); return scheme(e.sets, x.from, x.to); }
@@ -1853,8 +1854,9 @@ function drawRoutine(){
         <button class="iconbtn" aria-label="Übung entfernen" onclick="RO.exercises.splice(${i},1);drawRoutine()">×</button></div>
       <div class="exgrid">
         <div><div class="lbl">Sätze</div><div class="stepper"><button aria-label="Weniger Sätze" onclick="stepSets(${i},-1)">−</button><b id="ss${i}">${e.sets}</b><button class="plus" aria-label="Mehr Sätze" onclick="stepSets(${i},1)">+</button></div></div>
-        <div><div class="lbl">Wiederholungen</div><div class="reps"><input inputmode="numeric" aria-label="Wiederholungen von" value="${e.from}" oninput="RO.exercises[${i}].from=parseInt(this.value)||0"><span>bis</span><input inputmode="numeric" aria-label="Wiederholungen bis" value="${e.to}" oninput="RO.exercises[${i}].to=parseInt(this.value)||0"></div></div>
+        <div><div class="lbl">Wiederholungen</div><div class="reps"><input inputmode="numeric" aria-label="Wiederholungen von" placeholder="–" value="${e.from}" oninput="RO.exercises[${i}].from=parseInt(this.value)||''"><span>bis</span><input inputmode="numeric" aria-label="Wiederholungen bis" placeholder="–" value="${e.to}" oninput="RO.exercises[${i}].to=parseInt(this.value)||''"></div></div>
       </div></div>`).join('')}
+    ${RO.exercises.length ? '<p class="small muted" style="margin:0 4px 12px">Wiederholungen leer lassen, wenn du kein Ziel willst. Mit Ziel schlägt Spotter mehr Gewicht vor, sobald du das obere Ziel schaffst.</p>' : ''}
     <button class="dashed" onclick="openExLib({have:()=>RO.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>RO.exercises.push(x),back:drawRoutine})">+ Übung hinzufügen</button>
     <button class="btn ghost full" style="margin-top:8px" onclick="drawTextImport()">Plan als Text einfügen</button>
     <div class="btns"><button class="btn accent" style="flex:1" onclick="saveRoutine()">Trainingstag speichern</button>${RO.id ? `<button class="btn danger" onclick="deleteRoutine()">Löschen</button>` : ''}</div>`);
@@ -1889,8 +1891,8 @@ function applyImport(){
 const saveRoutine = run(async () => {
   const name = RO.name.trim();
   const exercises = RO.exercises.filter(e => e.name.trim()).map(e => {
-    let f = e.from || 10, t = e.to || f; if (t < f) [f, t] = [t, f];
-    return { name: e.name.trim(), sets: e.sets, reps: f === t ? String(f) : `${f}-${t}` };
+    let f = e.from || e.to || 0, t = e.to || f; if (t < f) [f, t] = [t, f];
+    return { name: e.name.trim(), sets: e.sets, reps: !f ? '' : f === t ? String(f) : `${f}-${t}` };
   });
   if (!name) return toast('Gib dem Trainingstag einen Namen');
   if (!exercises.length) return toast('Füge mindestens eine Übung hinzu');

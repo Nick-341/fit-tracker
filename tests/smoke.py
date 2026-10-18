@@ -217,6 +217,19 @@ def flow_training(ctx):
     check(pg.query_selector('.presets') is not None, 'Übungsbibliothek mit Vorgaben')
     close(pg); return pg
 
+def flow_ziel(ctx):
+    pg = open_app(ctx)
+    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
+    pg.evaluate("openRoutine('r1')"); pg.wait_for_timeout(300)
+    check(pg.input_value('[aria-label="Wiederholungen von"] >> nth=0') == '6' and pg.input_value('[aria-label="Wiederholungen bis"] >> nth=0') == '8', 'Editor: Wiederholungsbereich 6–8')
+    pg.fill('[aria-label="Wiederholungen von"] >> nth=1', ''); pg.fill('[aria-label="Wiederholungen bis"] >> nth=1', '')
+    pg.click('text=Trainingstag speichern'); pg.wait_for_timeout(500)
+    check(pg.evaluate("S.rt['r1'].data.exercises[1].reps") == '', 'Editor: ohne Ziel speicherbar')
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(500)
+    check('Ziel 4 × 6–8' in pg.inner_text('.exsub >> nth=0') and 'Ziel' not in pg.inner_text('.exsub >> nth=1'), 'Einheit: „Ziel 4 × 6–8“, ohne Ziel keine Angabe')
+    pg.evaluate("clearDraft(); closeSheet()")
+    return pg
+
 def flow_dran(ctx):
     pg = open_app(ctx)
     # Zwei Trainingstage: B wurde nie trainiert, also ist B dran; nach B ist A wieder dran (am längsten her)
@@ -347,7 +360,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():
