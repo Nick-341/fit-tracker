@@ -343,7 +343,10 @@ h3.sub{font-size:20px;margin-bottom:8px}
 .okc{flex:none;width:32px;height:32px;border-radius:16px;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center}
 .okc svg{width:16px;height:16px}
 .exmenu{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 12px}
-.exbtns{display:flex;gap:8px;margin-top:8px}
+.exbtns{display:flex;gap:8px;margin-top:8px;align-items:center}
+.exbtns .btn{flex:1}.exbtns .tbtn{flex:1;color:var(--ink)}
+.warmlbl{margin:0 0 4px}
+.setrow.warm .n,.setrow.warm input{color:var(--muted)}
 #undo{position:fixed;left:16px;right:16px;z-index:25;max-width:528px;margin:0 auto}
 .undobar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--board);color:var(--board-ink);border-radius:var(--r-card);padding:8px 8px 8px 16px;min-height:60px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:800}
 .undobar span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -991,7 +994,7 @@ function computeGame(p, logs, wos, ws, ms){
     const d = D(w.day); d.wo++; let pr = 0;
     (w.data.exercises || []).forEach(e => {
       const k = (e.name || '').toLowerCase().trim();
-      const top = Math.max(0, ...e.sets.map(s => num(s.kg) * (1 + num(s.reps) / 30)));
+      const top = Math.max(0, ...e.sets.filter(isWork).map(s => num(s.kg) * (1 + num(s.reps) / 30)));
       if (!k || top <= 0) return;
       if (best[k] !== undefined && top > best[k] + 0.01) pr++;
       best[k] = Math.max(best[k] ?? 0, top);
@@ -1276,9 +1279,9 @@ const openProgress = run(async () => {
   const wos = await qPaged('workout', uid);
   const map = {};
   wos.forEach(w => (w.data.exercises || []).forEach(e => {
-    const k = e.name.toLowerCase().trim(); if (!k) return;
-    const best = e.sets.reduce((a, s) => e1rm(s) > e1rm(a) ? s : a, e.sets[0] || { kg: 0, reps: 0 });
-    (map[k] = map[k] || { name: e.name, sessions: [] }).sessions.push({ day: w.day, best, est: e1rm(best), sets: e.sets });
+    const k = e.name.toLowerCase().trim(), ws = e.sets.filter(isWork); if (!k || !ws.length) return;
+    const best = ws.reduce((a, s) => e1rm(s) > e1rm(a) ? s : a, ws[0]);
+    (map[k] = map[k] || { name: e.name, sessions: [] }).sessions.push({ day: w.day, best, est: e1rm(best), sets: ws });
   }));
   EXP = Object.values(map).sort((a, b) => a.sessions.at(-1).day < b.sessions.at(-1).day ? 1 : -1);
   drawProgressList();
@@ -1317,8 +1320,8 @@ const drawWeek = run(async () => {
     if (t.kcal >= (tg ? tg.kcal * 0.5 : 800)){ logged++; kSum += t.kcal; if (tg){ tSum += tg.kcal; if (inTarget(p, d, t.kcal, wos.some(w => w.day === d))) inR++; } }
     if (tg && t.p >= tg.p * 0.9) prot++;
   }
-  const sets = wos.reduce((a, w) => a + w.data.exercises.reduce((b, e) => b + e.sets.length, 0), 0);
-  const vol = wos.reduce((a, w) => a + w.data.exercises.reduce((b, e) => b + e.sets.reduce((c, s) => c + num(s.kg) * num(s.reps), 0), 0), 0);
+  const sets = wos.reduce((a, w) => a + w.data.exercises.reduce((b, e) => b + e.sets.filter(isWork).length, 0), 0);
+  const vol = wos.reduce((a, w) => a + woVolume(w), 0);
   const avgW = arr => arr.length ? arr.reduce((a, w) => a + num(w.data.kg), 0) / arr.length : null;
   const wNow = avgW(ws.filter(w => w.day >= WR.start)), wPrev = avgW(ws.filter(w => w.day < WR.start));
   const avgK = logged ? kSum / logged : 0, avgT = logged && tSum ? tSum / logged : 0;
@@ -1736,8 +1739,9 @@ const saveRecipe = run(async () => {
 const deleteRecipe = run(async () => { if (!confirm('Vorlage löschen?')) return; await del(R.id); closeSheet(); render(); });
 
 /* ================= Training ================= */
+const isWork = s => !s.warm; // Aufwärmsätze zählen nicht für Volumen, Bestwerte, XP und Übungsfortschritt
 const exN = n => n === 1 ? '1 Übung' : n + ' Übungen';
-const woVolume = w => (w.data.exercises || []).reduce((a, e) => a + e.sets.reduce((b, s) => b + num(s.kg) * num(s.reps), 0), 0);
+const woVolume = w => (w.data.exercises || []).reduce((a, e) => a + e.sets.filter(isWork).reduce((b, s) => b + num(s.kg) * num(s.reps), 0), 0);
 // Geschätzte Dauer: Sätze × (Pause + 45 s Satzzeit), auf 5 min gerundet
 const estMinutes = r => Math.max(5, Math.round(r.data.exercises.reduce((a, e) => a + (num(e.sets) || 3), 0) * (restDefault() + 45) / 300) * 5);
 // „Dran“ ist der Trainingstag, der am längsten nicht trainiert wurde (ergibt die Rotation, auch nach Aussetzern)
@@ -1756,7 +1760,7 @@ function prCounts(wos){
   const best = {}, out = {};
   wos.forEach(w => { let pr = 0;
     (w.data.exercises || []).forEach(e => { const k = (e.name || '').toLowerCase().trim();
-      const top = Math.max(0, ...e.sets.map(s => num(s.kg) * (1 + num(s.reps) / 30))); if (!k || top <= 0) return;
+      const top = Math.max(0, ...e.sets.filter(isWork).map(s => num(s.kg) * (1 + num(s.reps) / 30))); if (!k || top <= 0) return;
       if (best[k] !== undefined && top > best[k] + 0.01) pr++; best[k] = Math.max(best[k] ?? 0, top); });
     out[w.id] = Math.min(pr, 3); });
   return out;
@@ -1805,7 +1809,7 @@ function openWo(id){
   const w = S.wos?.[id]; if (!w) return; const mine = w.user_id === S.user.id, kd = S.kd || [];
   openSheet(`<div class="sh-head"><h3>${esc(w.data.name)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     <p class="small muted" style="margin-top:0">${dayLabel(w.day)} · ${fmt(woVolume(w))} kg Volumen</p>
-    <div class="list">${w.data.exercises.map(e => `<div class="row"><div class="grow"><div class="t">${esc(e.name)}</div><div class="s">${e.sets.map(s => `${fmt1(num(s.kg)).replace(',0', '')} × ${s.reps}`).join(' · ')}</div></div></div>`).join('')}</div>
+    <div class="list">${w.data.exercises.map(e => `<div class="row"><div class="grow"><div class="t">${esc(e.name)}</div><div class="s">${e.sets.map(s => `${s.warm ? 'W ' : ''}${fmt1(num(s.kg)).replace(',0', '')} × ${s.reps}`).join(' · ')}</div></div></div>`).join('')}</div>
     ${w.data.note ? `<div class="note" style="margin-top:12px">${esc(w.data.note)}</div>` : ''}
     ${mine && kd.some(k => k.data.key === 'wo:' + w.id) ? `<div class="kudosin">${KUDOS_ICON}<span>Kudos von <b>${esc(nameOf(S.partner))}</b></span></div>` : ''}
     <div class="btns">${mine ? `<button class="btn line full" onclick="editWorkout('${w.id}')">Bearbeiten</button>` : kudosBtn('wo:' + w.id, w.day, kd.some(k => k.data.key === 'wo:' + w.id), w.data.name)}</div>`);
@@ -1956,7 +1960,7 @@ const startWorkout = run(async rid => {
   if (rid && !S.rt[rid]) (await q('routine', S.user.id)).forEach(x => S.rt[x.id] = x); // z. B. Start von Heute aus
   const r = rid ? S.rt[rid] : null;
   W = { day: S.day, start: Date.now(), routine_id: rid || null, name: r ? r.data.name : 'Freies Training', note: '', exercises: [], last: await lastMap() };
-  if (r) W.exercises = r.data.exercises.map(e => ({ name: e.name, target: e.reps || '', sets: preSets(e.name, num(e.sets) || 3) }));
+  if (r) W.exercises = r.data.exercises.map(e => ({ name: e.name, target: e.reps || '', sets: [...preWarm(e.name), ...preSets(e.name, num(e.sets) || 3)] }));
   drawWorkout();
 });
 const editWorkout = run(async id => {
@@ -1973,6 +1977,10 @@ const setVol = sets => sets.reduce((a, s) => a + (s.warm ? 0 : num(s.kg) * num(s
 // Aktueller Satz: erster offener Satz der ersten nicht fertigen Übung
 function curPos(){ for (let i = 0; i < W.exercises.length; i++){ const j = W.exercises[i].sets.findIndex(s => !s.done); if (j >= 0 && !exDone(W.exercises[i])) return [i, j]; } return [-1, -1]; }
 // Vorausfüllen mit den Arbeitssätzen der letzten Einheit dieser Übung
+function preWarm(name){ const l = W.last?.[(name || '').toLowerCase()]; return l ? l.sets.filter(s => s.warm && num(s.reps)).map(s => ({ kg: s.kg, reps: s.reps, warm: true, done: false })) : []; }
+function addWarm(i){ const e = W.exercises[i], k = e.sets.filter(s => s.warm).length, w0 = workSets(e)[0];
+  const prev = e.sets.filter(s => s.warm).at(-1) || { kg: w0 && num(w0.kg) ? Math.round(num(w0.kg) / 2 / 2.5) * 2.5 : '', reps: 10 };
+  e.sets.splice(k, 0, { kg: prev.kg, reps: prev.reps, warm: true, done: false }); e.open = true; drawWorkout(); }
 function preSets(name, n){
   const l = W.last?.[(name || '').toLowerCase()], ws = l ? l.sets.filter(s => !s.warm && num(s.reps)) : [];
   return Array.from({ length: n }, (_, j) => { const x = ws[j] || ws.at(-1); return { kg: x ? x.kg : '', reps: x ? x.reps : '', done: false }; });
@@ -2007,6 +2015,7 @@ function setRow(i, j, s, cur, ls, no){
 }
 function drawWorkout(){
   const lastSet = (n, j) => { const l = W.last[n.toLowerCase()]; const ws = l ? l.sets.filter(s => !s.warm) : []; return ws[j] || ws.at(-1) || null; };
+  const lastWarm = (n, j) => { const l = W.last[n.toLowerCase()]; const ws = l ? l.sets.filter(s => s.warm) : []; return ws[j] || null; };
   const [ci, cj] = curPos();
   openSheet(`<div class="whead"><input class="wname" value="${esc(W.name)}" aria-label="Bezeichnung" oninput="W.name=this.value"><button class="tbtn" onclick="if(confirm('Ohne Speichern schließen? Die Einheit wird verworfen.')){clearDraft();closeSheet()}">Schließen</button></div>
     <div class="wmeta" id="wmeta"></div><div class="wseg" id="wseg"></div><div oninput="saveDraft()">
@@ -2019,9 +2028,10 @@ function drawWorkout(){
         <button class="iconbtn" aria-label="Weitere Aktionen" aria-expanded="${!!e.menu}" onclick="W.exercises[${i}].menu=!W.exercises[${i}].menu;drawWorkout()">${I_DOTS}</button></div>
       <div class="exsub">${[eq, e.target ? `Ziel ${ws.length} × ${esc(e.target).replace('-', '–')}` : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
       ${e.menu ? `<div class="exmenu"><button class="btn sm ghost" ${e.sets.length ? '' : 'disabled'} onclick="removeSet(${i},${e.sets.length - 1})">Letzten Satz entfernen</button><button class="btn sm danger" onclick="removeEx(${i})">Übung entfernen</button></div>` : ''}
+      ${e.sets.some(s => s.warm) ? `<div class="lbl warmlbl">Aufwärmen</div>${e.sets.map((s, j) => s.warm ? setRow(i, j, s, i === ci && j === cj, lastWarm(e.name, j), 'W') : '').join('')}` : ''}
       <div class="sethead lbl"><span>Satz</span><span>Vorher</span><span>kg</span><span>Wdh</span><span></span></div>
       ${e.sets.map((s, j) => s.warm ? '' : setRow(i, j, s, i === ci && j === cj, lastSet(e.name, wn), ++wn)).join('')}
-      <div class="exbtns"><button class="btn ghost" onclick="addSet(${i})">Satz hinzufügen</button></div></div>`; }).join('')}
+      <div class="exbtns"><button class="btn ghost" onclick="addSet(${i})">Satz hinzufügen</button><button class="tbtn" onclick="addWarm(${i})">Aufwärmsatz</button></div></div>`; }).join('')}
     <button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from?(x.from===x.to?String(x.from):x.from+'-'+x.to):'',sets:preSets(x.name,x.sets)}),back:drawWorkout})">+ Übung hinzufügen</button>
     <label class="f" style="margin-top:16px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     ${W.id ? `<div class="btns"><button class="btn danger" onclick="deleteWorkout()">Einheit löschen</button></div>` : ''}

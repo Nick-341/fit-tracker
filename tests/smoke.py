@@ -237,6 +237,31 @@ def flow_start_von_heute(ctx):
     check(len(pg.query_selector_all('.ex')) == 2, 'Start von Heute: Übungen des Trainingstags geladen')
     pg.evaluate("clearDraft(); closeSheet()"); return pg
 
+def flow_aufwaermen(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
+    pg.click('.exbtns >> text=Aufwärmsatz >> nth=0'); pg.wait_for_timeout(300)
+    check(pg.query_selector('.warmlbl') is not None and pg.inner_text('.setrow.warm .n') == 'W', 'Aufwärmen: eigener Bereich mit „W“')
+    pg.fill('.setrow.warm input >> nth=0', '200'); pg.fill('.setrow.warm input >> nth=1', '10')
+    pg.click('.setrow.warm .chk'); pg.wait_for_timeout(200); shot(pg, 'training_aufwaermen')
+    check(pg.evaluate("getComputedStyle(document.querySelector('.setrow.warm .chk.on')).backgroundColor") != 'rgb(255, 184, 28)', 'Aufwärmen: Haken nicht gelb')
+    for k in range(4): pg.click(f'.setrow:not(.warm) .chk >> nth={k}')
+    pg.wait_for_timeout(300)
+    check(pg.inner_text('#wmeta').endswith('2.436 kg'), 'Aufwärmen nicht im Volumen der Einheit')
+    pg.evaluate("stopRest()"); pg.click('.wsave'); pg.wait_for_timeout(600)
+    w = pg.evaluate("(()=>{const w=Object.values(S.wos||{}).at(-1)||null;return w})()")
+    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(600)
+    r = pg.evaluate("""(()=>{const all=Object.values(S.wos).sort((a,b)=>a.day<b.day?-1:1);const w=all.at(-1);
+      const g=computeGame(S.me,[],all,[],[]), g2=computeGame(S.me,[],all.map(x=>({...x,data:{...x.data,exercises:x.data.exercises.map(e=>({...e,sets:e.sets.filter(s=>!s.warm)}))}})),[],[]);
+      return {warm:w.data.exercises[0].sets.filter(s=>s.warm).length, vol:woVolume(w), pr:prCounts(all)[w.id], xp:g.xp===g2.xp&&g.prs===g2.prs}})()""")
+    check(r['warm'] == 1, 'Aufwärmsatz gespeichert als warm: true')
+    check(r['vol'] == 2436, 'Aufwärmen nicht im Volumen')
+    check(r['pr'] == 0, 'Aufwärmen kein Bestwert')
+    check(r['xp'], 'Aufwärmen ändert XP nicht')
+    pg.click('.lhead >> text=Fortschritt'); pg.wait_for_timeout(600)
+    check('200' not in pg.inner_text('#sheetBody'), 'Aufwärmen nicht im Übungsfortschritt')
+    close(pg); return pg
+
 def flow_ziel(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
@@ -380,7 +405,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():
