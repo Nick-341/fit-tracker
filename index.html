@@ -195,6 +195,8 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .lhead h3{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow2{min-height:52px}
 .mdiff{width:48px;text-align:right;font-size:14px;color:var(--muted)}
+.sugrow .num{color:var(--muted)}
+.row.npact{box-shadow:inset 0 0 0 2px var(--accent)}
 
 /* Profil */
 .phead{display:flex;align-items:center;gap:16px}
@@ -2272,28 +2274,49 @@ async function rKoerper(){
   h += rows || `<div class="row"><span class="s muted">${mine ? 'Noch keine Maße. Tippe auf +, z. B. alle zwei Wochen.' : 'Noch keine Maße eingetragen.'}</span></div>`;
   return h + '</div>';
 }
-function openWeight(){
-  q('weight', S.user.id, S.day, S.day).then(r => { const tw = r[0];
-    openSheet(`<div class="sh-head"><h3>Gewicht ${dayLabel(S.day) === 'Heute' ? 'heute' : 'am ' + shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-      <label class="f"><span>In kg, morgens nüchtern</span><input id="wkg" inputmode="decimal" placeholder="kg" value="${tw ? String(tw.data.kg).replace('.', ',') : ''}"></label>
-      <div class="btns"><button class="btn accent full" onclick="saveWeight('${tw?.id || ''}')">Speichern</button></div>`);
-    setTimeout(() => $('#wkg')?.focus(), 50); }).catch(() => toast('Laden fehlgeschlagen'));
+// Gewicht: Zahlenfeld mit dem letzten Wert vorausgefüllt, ±0,1, „Eintragen“
+const openWeight = run(async () => {
+  const ws = await q('weight', S.user.id, addDays(S.day, -120), S.day), tw = ws.find(w => w.day === S.day), lw = tw || ws.at(-1);
+  KW = { id: tw?.id || '', v: lw ? num(lw.data.kg) : 0 };
+  openSheet(`<div class="sh-head"><h3>Gewicht ${dayLabel(S.day) === 'Heute' ? 'heute' : 'am ' + shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <p class="small muted" style="margin-top:0">Morgens nüchtern wiegen. ${tw ? 'Für diesen Tag ist schon ein Wert eingetragen.' : lw ? 'Vorausgefüllt mit deinem letzten Wert.' : ''}</p>
+    <button class="amtval" id="wkg" aria-label="Gewicht in kg" onclick="weightPad()"><b class="num">${KW.v ? npFmt(KW.v) : '–'}</b><span class="unit">kg</span></button>
+    <div class="btns amtbtn"><button class="btn accent full big" onclick="saveWeight()">Eintragen</button></div>`);
+  weightPad();
+});
+let KW = null;
+function weightPad(){ npOpen({ sel: '#wkg', value: KW.v ? npFmt(KW.v) : '', step: 0.1, go: 'Eintragen', label: 'Gewicht in kg',
+  onInput: v => { KW.v = num(v); $('#wkg .num').textContent = v || '–'; }, onGo: () => saveWeight() }); }
+// Maße: Liste, Tipp öffnet das Zahlenfeld (letzter Wert, ±0,5), „Weiter“ zum nächsten Maß, auf dem letzten „Eintragen“
+let KM = null;
+const openMeasure = run(async () => {
+  const ms = await q('measure', S.user.id, null, S.day), tm = ms.find(m => m.day === S.day);
+  KM = { id: tm?.id || '', v: {}, set: {} };
+  MEAS.forEach(([k]) => { const last = tm?.data[k] ? tm : ms.slice().reverse().find(m => m.data[k]); KM.v[k] = last ? num(last.data[k]) : 0; if (tm?.data[k]) KM.set[k] = true; });
+  drawMeasure();
+});
+function drawMeasure(){
+  openSheet(`<div class="sh-head"><h3>Maße am ${shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+    <p class="small muted" style="margin-top:0">In cm. Tippe auf ein Maß, „Weiter“ springt zum nächsten. Nur angetippte Maße werden gespeichert.</p>
+    <div class="list">${MEAS.map(([k, l]) => `<button class="row tap mrow2 ${KM.set[k] ? '' : 'sugrow'}" id="mm_${k}" onclick="measurePad('${k}')"><span class="grow t">${l}</span><span><b class="num n20">${KM.v[k] ? npFmt(KM.v[k]) : '–'}</b><span class="unit">cm</span></span></button>`).join('')}</div>
+    <div class="btns amtbtn"><button class="btn accent full big" onclick="saveMeasure()">Eintragen</button></div>`);
 }
-function openMeasure(){
-  q('measure', S.user.id, S.day, S.day).then(r => { const tm = r[0];
-    openSheet(`<div class="sh-head"><h3>Maße am ${shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-      <p class="small muted" style="margin-top:0">In cm. Leere Felder werden übersprungen.</p><div class="grid2">${MEAS.map(([k, l]) => `<label class="f"><span>${l}</span><input id="m_${k}" inputmode="decimal" value="${tm?.data[k] ? String(tm.data[k]).replace('.', ',') : ''}"></label>`).join('')}</div>
-      <div class="btns"><button class="btn accent full" onclick="saveMeasure('${tm?.id || ''}')">Speichern</button></div>`); }).catch(() => toast('Laden fehlgeschlagen'));
+function measurePad(k){
+  const i = MEAS.findIndex(m => m[0] === k), last = i === MEAS.length - 1;
+  KM.set[k] = true; $('#mm_' + k).classList.remove('sugrow');
+  npOpen({ sel: '#mm_' + k, value: KM.v[k] ? npFmt(KM.v[k]) : '', step: 0.5, go: last ? 'Eintragen' : 'Weiter', label: MEAS[i][1] + ' in cm',
+    onInput: v => { KM.v[k] = num(v); $(`#mm_${k} .num`).textContent = v || '–'; },
+    onGo: () => last ? saveMeasure() : measurePad(MEAS[i + 1][0]) });
 }
-const saveWeight = run(async id => {
-  const kg = num($('#wkg').value); if (kg < 30 || kg > 300) return toast('Bitte ein gültiges Gewicht eingeben');
-  if (id) await upd(id, { kg }); else await add('weight', S.day, { kg });
+const saveWeight = run(async () => {
+  const kg = r1(KW.v); if (kg < 30 || kg > 300) return toast('Bitte ein gültiges Gewicht eingeben');
+  if (KW.id) await upd(KW.id, { kg }); else await add('weight', S.day, { kg });
   closeSheet(); toast('Gewicht gespeichert'); render();
 });
-const saveMeasure = run(async id => {
-  const data = {}; MEAS.forEach(([k]) => { const v = num($('#m_' + k).value); if (v) data[k] = v; });
-  if (!Object.keys(data).length) return toast('Bitte mindestens ein Maß eintragen');
-  if (id) await upd(id, data); else await add('measure', S.day, data);
+const saveMeasure = run(async () => {
+  const data = {}; MEAS.forEach(([k]) => { if (KM.set[k] && KM.v[k]) data[k] = r1(KM.v[k]); });
+  if (!Object.keys(data).length) return toast('Tippe mindestens ein Maß an');
+  if (KM.id) await upd(KM.id, data); else await add('measure', S.day, data);
   closeSheet(); toast('Maße gespeichert'); render();
 });
 

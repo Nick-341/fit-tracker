@@ -10,6 +10,7 @@
 - Einheit: „Als Nächstes“ in der Pausenleiste (nächster Satz, bei neuer Übung mit Namen)
 - Zahlenfeld: eigenes Zahlenfeld statt System-Tastatur in der Einheit (±2,5 kg / ±1 Wdh., „Weiter“ von kg zu Wdh., „Abhaken“ hakt ab und startet den Timer)
 - Essen: Mengen-Sheet mit Zahlenfeld (±10 g bzw. ±0,5 Portion), Live-Nährwerten und Mahlzeit; Korb leer „Eintragen“, Korb voll „In den Korb“, Eintrag bearbeiten „Speichern“. Korb- und Portionsmengen ebenfalls über das Zahlenfeld
+- Körper: Gewicht über das Zahlenfeld (letzter Wert, ±0,1), Maße als Liste mit Zahlenfeld (±0,5, „Weiter“ zum nächsten Maß)
 - Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026
