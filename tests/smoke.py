@@ -184,7 +184,7 @@ def flow_training(ctx):
     check(pg.inner_text('.board .lbl') .lower() == 'als nächstes', 'Training: Tafel „Als Nächstes“')
     bottom_free(pg, 'Training')
     pg.click('.board >> text=Starten'); pg.wait_for_timeout(500)
-    check(pg.input_value('.ex >> nth=1 >> .setrow >> nth=0 >> input >> nth=0') == '55' and pg.input_value('.ex >> nth=1 >> .setrow >> nth=0 >> input >> nth=1') == '10', 'Sätze mit Werten vom letzten Mal vorausgefüllt')
+    check(pg.inner_text('.ex >> nth=1 >> .setrow >> nth=0 >> .nf >> nth=0') == '55' and pg.inner_text('.ex >> nth=1 >> .setrow >> nth=0 >> .nf >> nth=1') == '10', 'Sätze mit Werten vom letzten Mal vorausgefüllt')
     check(pg.query_selector('.setrow.cur .chk.cur') is not None, 'Aktueller Satz hervorgehoben')
     pg.click('.chk >> nth=0'); pg.wait_for_timeout(400)
     check(pg.query_selector('.chk.on') is not None, 'Satz abgehakt')
@@ -242,8 +242,8 @@ def flow_aufwaermen(ctx):
     pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
     pg.click('.exbtns >> text=Aufwärmsatz >> nth=0'); pg.wait_for_timeout(300)
     check(pg.query_selector('.warmlbl') is not None and pg.inner_text('.setrow.warm .n') == 'W', 'Aufwärmen: eigener Bereich mit „W“')
-    pg.fill('.setrow.warm input >> nth=0', '200'); pg.fill('.setrow.warm input >> nth=1', '10')
-    pg.click('.setrow.warm .chk'); pg.wait_for_timeout(200); shot(pg, 'training_aufwaermen')
+    pg.click('.setrow.warm .nf >> nth=0'); [pg.click(f'#numpad >> text="{d}"') for d in '200']; pg.click('#npgo')
+    [pg.click(f'#numpad >> text="{d}"') for d in '10']; pg.click('#npgo'); pg.wait_for_timeout(200); shot(pg, 'training_aufwaermen')
     check(pg.evaluate("getComputedStyle(document.querySelector('.setrow.warm .chk.on')).backgroundColor") != 'rgb(255, 184, 28)', 'Aufwärmen: Haken nicht gelb')
     for k in range(4): pg.click(f'.setrow:not(.warm) .chk >> nth={k}')
     pg.wait_for_timeout(300)
@@ -267,10 +267,10 @@ def flow_steigerung(ctx):
     pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600); shot(pg, 'training_steigerung')
     # Bankdrücken 6–8, zuletzt 84 kg × 8 (oberes Ziel) -> 86,5 kg × 6; Rudern 10–12, zuletzt 55 × 10 -> keine Steigerung
     check('Heute 86,5 kg.' in pg.inner_text('.ex >> nth=0') and 'Letztes Mal 8 Wdh. mit 84 kg' in pg.inner_text('.ex >> nth=0'), 'Steigerung: Hinweis mit +2,5 kg')
-    check(pg.input_value('.ex >> nth=0 >> .setrow >> nth=0 >> input >> nth=0') == '86,5' and pg.input_value('.ex >> nth=0 >> .setrow >> nth=3 >> input >> nth=1') == '6', 'Steigerung: alle Arbeitssätze +2,5 kg, Wdh. aufs untere Ziel')
-    check(pg.query_selector('.ex >> nth=1 >> .prog') is None and pg.input_value('.ex >> nth=1 >> .setrow >> nth=0 >> input >> nth=0') == '55', 'Ohne erreichtes Ziel: letzte Werte, kein Hinweis')
+    check(pg.inner_text('.ex >> nth=0 >> .setrow >> nth=0 >> .nf >> nth=0') == '86,5' and pg.inner_text('.ex >> nth=0 >> .setrow >> nth=3 >> .nf >> nth=1') == '6', 'Steigerung: alle Arbeitssätze +2,5 kg, Wdh. aufs untere Ziel')
+    check(pg.query_selector('.ex >> nth=1 >> .prog') is None and pg.inner_text('.ex >> nth=1 >> .setrow >> nth=0 >> .nf >> nth=0') == '55', 'Ohne erreichtes Ziel: letzte Werte, kein Hinweis')
     pg.evaluate("clearDraft(); closeSheet(); S.rt['r1'].data.exercises[0].reps=''"); pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
-    check(pg.query_selector('.prog') is None and pg.input_value('.setrow >> nth=0 >> input >> nth=0') == '84', 'Ohne Wiederholungsziel keine Steigerung')
+    check(pg.query_selector('.prog') is None and pg.inner_text('.setrow >> nth=0 >> .nf >> nth=0') == '84', 'Ohne Wiederholungsziel keine Steigerung')
     pg.evaluate("clearDraft(); closeSheet()"); return pg
 
 def flow_als_naechstes(ctx):
@@ -283,6 +283,25 @@ def flow_als_naechstes(ctx):
     pg.wait_for_timeout(300)
     check(pg.inner_text('#wnext b') == 'Rudern am Kabel · Satz 1 · 55 kg × 10', 'Als Nächstes: nach letzter Übung die nächste mit Namen')
     shot(pg, 'training_als_naechstes')
+    pg.evaluate("stopRest(); clearDraft(); closeSheet()"); return pg
+
+def flow_zahlenfeld(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
+    check(pg.query_selector('.setrow input') is None, 'Keine System-Tastatur-Felder in der Einheit')
+    pg.click('.setrow.cur .nf >> nth=0'); pg.wait_for_timeout(200); shot(pg, 'zahlenfeld')
+    check(pg.is_visible('#numpad') and pg.inner_text('#numpad .nphead .lbl').upper() == 'GEWICHT · SATZ 1', 'Zahlenfeld: Kopf „Gewicht · Satz 1“')
+    check('Vorher 84 × 8' in pg.inner_text('#numpad .nphead'), 'Zahlenfeld: Vorher-Wert')
+    check(pg.query_selector('.nf.npact') is not None and not pg.is_visible('.wbar'), 'Aktives Feld markiert, untere Leiste ersetzt')
+    pg.click('#numpad >> text="9"'); pg.click('#numpad >> text="0"')
+    check(pg.inner_text('.nf.npact') == '90', 'Erster Tipp ersetzt den Wert')
+    pg.click('[aria-label="2,5 mehr"]'); check(pg.inner_text('.nf.npact') == '92,5', '± ändert den Wert (2,5 kg)')
+    pg.click('#npgo'); pg.wait_for_timeout(100)
+    check(pg.inner_text('#npgo') == 'Abhaken' and pg.inner_text('#numpad .nphead .lbl').upper().startswith('WIEDERHOLUNGEN'), 'Weiter springt zu Wdh., Button heißt „Abhaken“')
+    pg.click('[aria-label="1 mehr"]'); check(pg.inner_text('.nf.npact') == '7', 'Wdh. ± 1')
+    pg.click('#npgo'); pg.wait_for_timeout(300)
+    check(pg.evaluate('W.exercises[0].sets[0].done') and pg.evaluate('TM.end > 0') and not pg.is_visible('#numpad'), 'Abhaken hakt ab, startet Timer, schließt Zahlenfeld')
+    check(pg.evaluate('W.exercises[0].sets[0].kg') == '92,5' and pg.evaluate('num(W.exercises[0].sets[0].kg)') == 92.5, 'Wert mit Komma gespeichert')
     pg.evaluate("stopRest(); clearDraft(); closeSheet()"); return pg
 
 def flow_ziel(ctx):
@@ -428,7 +447,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():

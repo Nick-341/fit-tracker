@@ -8,6 +8,7 @@
 - Einheit: Aufwärmsätze als eigener Bereich („W“), zählen nicht für Volumen, Bestwerte, XP und Übungsfortschritt (gespeichert als warm: true)
 - Einheit: Steigerung vorausgefüllt (+2,5 kg, Wdh. aufs untere Ziel), wenn das obere Ziel geschafft wurde, mit Hinweiszeile
 - Einheit: „Als Nächstes“ in der Pausenleiste (nächster Satz, bei neuer Übung mit Namen)
+- Zahlenfeld: eigenes Zahlenfeld statt System-Tastatur in der Einheit (±2,5 kg / ±1 Wdh., „Weiter“ von kg zu Wdh., „Abhaken“ hakt ab und startet den Timer)
 - Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026
