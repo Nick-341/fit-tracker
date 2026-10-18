@@ -456,7 +456,12 @@ def flow_koerper(ctx):
     pg = open_app(ctx)
     pg.click('#tabs >> text=Körper'); pg.wait_for_timeout(500); shot(pg, 'koerper', True)
     check(pg.query_selector('.board .bchart') is not None, 'Körper: Trendtafel mit Diagramm')
-    check('pro Woche' in pg.inner_text('.board'), 'Körper: Tempo pro Woche')
+    check(pg.query_selector('.tpill .pill svg') is not None and 'kg in 2 Wochen' in pg.inner_text('.tpill') and 'ca. +' in pg.inner_text('.tpill'), 'Körper: Trend-Pill mit Pfeil und „ca. … kg pro Woche“')
+    check(pg.query_selector('.bchart .ax') is not None and pg.query_selector('.bchart polyline') is not None and 'heute' in pg.inner_text('.cdates'), 'Körper: Achse, Trendlinie, Datum „heute“')
+    check(pg.get_attribute('.bchart', 'aria-label').startswith('Gewichtstrend 4 Wochen: von '), 'Körper: aria-label mit Start- und Endwert')
+    check(pg.query_selector('.bchart rect') is not None and 'Trend' in pg.inner_text('.clegend2'), 'Körper: Endwert-Schild und Legende')
+    labels = sorted(int(x) for x in pg.eval_on_selector_all('.bchart .ax', 'els => els.map(e => e.textContent)'))
+    check(labels[-1] - labels[0] >= 2 and all(b - a == 1 for a, b in zip(labels, labels[1:])), 'Körper: Ausschnitt mind. 2 kg in ganzen kg')
     pg.click('.bseg >> text=3 M'); pg.wait_for_timeout(400)
     check(pg.query_selector('.bseg button.on').inner_text() == '3 M', 'Körper: Zeitraum wechseln')
     pg.click('text=Gewicht eintragen'); pg.wait_for_timeout(400)
@@ -473,6 +478,12 @@ def flow_koerper(ctx):
     pg.click('#npgo'); pg.wait_for_timeout(500)
     check(pg.query_selector('.mrow2') is not None, 'Körper: Maße als Liste')
     bottom_free(pg, 'Körper')
+    # unter 7 Wiegungen: keine Trendlinie; große Lücken: Linie unterbrochen
+    pg.evaluate("S.wr='4w'; S.day=addDays(today(),-10); render()"); pg.wait_for_timeout(500)
+    check(pg.query_selector('.bchart polyline') is None and 'Trend ab 7 Wiegungen' in pg.inner_text('.board'), 'Unter 7 Wiegungen: Hinweis statt Trendlinie')
+    pg.evaluate("(async()=>{for(let i=40;i<=60;i+=2) await add('weight', addDays(today(),-i), {kg: 88 - i*0.01}); S.day=today(); S.wr='3m'; render();})()"); pg.wait_for_timeout(900)
+    check(len(pg.query_selector_all('.bchart polyline')) == 2 and 'NaN' not in pg.inner_html('.bchart'), 'Große Lücke: Trendlinie unterbrochen, keine Fehler')
+    shot(pg, 'koerper_luecke')
     return pg
 
 def flow_profil(ctx):

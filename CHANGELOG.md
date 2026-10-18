@@ -13,6 +13,7 @@
 - Körper: Gewicht über das Zahlenfeld (letzter Wert, ±0,1), Maße als Liste mit Zahlenfeld (±0,5, „Weiter“ zum nächsten Maß)
 - Rückgängig statt Nachfragen: Einträge, Sätze, Übungen, Einheiten, Gewicht und Maße werden ohne Dialog gelöscht, 5 s „Rückgängig“; Löschen erst nach Ablauf oder beim Verlassen der Ansicht, offline mit der Warteschlange
 - Kalender: Tipp auf das Datum (Heute, Essen) öffnet die Monatsansicht mit „im Ziel“, „geloggt“ und Training, Monatsbilanz, offline aus dem Cache
+- Körper: Trend lesbar – „1,3 kg in 4 Wochen“ mit Tempo pro Woche, Achse in ganzen kg, Datumsmarken, Start- und Endwert, Legende; unter 7 Wiegungen Hinweis statt Linie, Lücken über 14 Tage unterbrechen die Linie
 - Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026
