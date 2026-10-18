@@ -184,7 +184,7 @@ def flow_training(ctx):
     check(pg.inner_text('.board .lbl') .lower() == 'als nächstes', 'Training: Tafel „Als Nächstes“')
     bottom_free(pg, 'Training')
     pg.click('.board >> text=Starten'); pg.wait_for_timeout(500)
-    check(pg.input_value('.setrow >> nth=0 >> input >> nth=0') == '84' and pg.input_value('.setrow >> nth=0 >> input >> nth=1') == '8', 'Sätze mit Werten vom letzten Mal vorausgefüllt')
+    check(pg.input_value('.ex >> nth=1 >> .setrow >> nth=0 >> input >> nth=0') == '55' and pg.input_value('.ex >> nth=1 >> .setrow >> nth=0 >> input >> nth=1') == '10', 'Sätze mit Werten vom letzten Mal vorausgefüllt')
     check(pg.query_selector('.setrow.cur .chk.cur') is not None, 'Aktueller Satz hervorgehoben')
     pg.click('.chk >> nth=0'); pg.wait_for_timeout(400)
     check(pg.query_selector('.chk.on') is not None, 'Satz abgehakt')
@@ -247,7 +247,7 @@ def flow_aufwaermen(ctx):
     check(pg.evaluate("getComputedStyle(document.querySelector('.setrow.warm .chk.on')).backgroundColor") != 'rgb(255, 184, 28)', 'Aufwärmen: Haken nicht gelb')
     for k in range(4): pg.click(f'.setrow:not(.warm) .chk >> nth={k}')
     pg.wait_for_timeout(300)
-    check(pg.inner_text('#wmeta').endswith('2.436 kg'), 'Aufwärmen nicht im Volumen der Einheit')
+    check(pg.inner_text('#wmeta').endswith('2.076 kg'), 'Aufwärmen nicht im Volumen der Einheit')
     pg.evaluate("stopRest()"); pg.click('.wsave'); pg.wait_for_timeout(600)
     w = pg.evaluate("(()=>{const w=Object.values(S.wos||{}).at(-1)||null;return w})()")
     pg.click('#tabs >> text=Training'); pg.wait_for_timeout(600)
@@ -255,12 +255,23 @@ def flow_aufwaermen(ctx):
       const g=computeGame(S.me,[],all,[],[]), g2=computeGame(S.me,[],all.map(x=>({...x,data:{...x.data,exercises:x.data.exercises.map(e=>({...e,sets:e.sets.filter(s=>!s.warm)}))}})),[],[]);
       return {warm:w.data.exercises[0].sets.filter(s=>s.warm).length, vol:woVolume(w), pr:prCounts(all)[w.id], xp:g.xp===g2.xp&&g.prs===g2.prs}})()""")
     check(r['warm'] == 1, 'Aufwärmsatz gespeichert als warm: true')
-    check(r['vol'] == 2436, 'Aufwärmen nicht im Volumen')
+    check(r['vol'] == 2076, 'Aufwärmen nicht im Volumen')  # 4 × 86,5 kg × 6
     check(r['pr'] == 0, 'Aufwärmen kein Bestwert')
     check(r['xp'], 'Aufwärmen ändert XP nicht')
     pg.click('.lhead >> text=Fortschritt'); pg.wait_for_timeout(600)
     check('200' not in pg.inner_text('#sheetBody'), 'Aufwärmen nicht im Übungsfortschritt')
     close(pg); return pg
+
+def flow_steigerung(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600); shot(pg, 'training_steigerung')
+    # Bankdrücken 6–8, zuletzt 84 kg × 8 (oberes Ziel) -> 86,5 kg × 6; Rudern 10–12, zuletzt 55 × 10 -> keine Steigerung
+    check('Heute 86,5 kg.' in pg.inner_text('.ex >> nth=0') and 'Letztes Mal 8 Wdh. mit 84 kg' in pg.inner_text('.ex >> nth=0'), 'Steigerung: Hinweis mit +2,5 kg')
+    check(pg.input_value('.ex >> nth=0 >> .setrow >> nth=0 >> input >> nth=0') == '86,5' and pg.input_value('.ex >> nth=0 >> .setrow >> nth=3 >> input >> nth=1') == '6', 'Steigerung: alle Arbeitssätze +2,5 kg, Wdh. aufs untere Ziel')
+    check(pg.query_selector('.ex >> nth=1 >> .prog') is None and pg.input_value('.ex >> nth=1 >> .setrow >> nth=0 >> input >> nth=0') == '55', 'Ohne erreichtes Ziel: letzte Werte, kein Hinweis')
+    pg.evaluate("clearDraft(); closeSheet(); S.rt['r1'].data.exercises[0].reps=''"); pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
+    check(pg.query_selector('.prog') is None and pg.input_value('.setrow >> nth=0 >> input >> nth=0') == '84', 'Ohne Wiederholungsziel keine Steigerung')
+    pg.evaluate("clearDraft(); closeSheet()"); return pg
 
 def flow_ziel(ctx):
     pg = open_app(ctx)
@@ -405,7 +416,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():

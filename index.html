@@ -346,6 +346,8 @@ h3.sub{font-size:20px;margin-bottom:8px}
 .exbtns{display:flex;gap:8px;margin-top:8px;align-items:center}
 .exbtns .btn{flex:1}.exbtns .tbtn{flex:1;color:var(--ink)}
 .warmlbl{margin:0 0 4px}
+.prog{display:flex;gap:12px;align-items:flex-start;background:var(--hint);border-radius:var(--r-btn);padding:12px 16px;font-size:15px;margin:0 0 12px}
+.prog svg{flex:none;color:var(--mine);margin-top:2px}
 .setrow.warm .n,.setrow.warm input{color:var(--muted)}
 #undo{position:fixed;left:16px;right:16px;z-index:25;max-width:528px;margin:0 auto}
 .undobar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--board);color:var(--board-ink);border-radius:var(--r-card);padding:8px 8px 8px 16px;min-height:60px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:800}
@@ -1960,7 +1962,7 @@ const startWorkout = run(async rid => {
   if (rid && !S.rt[rid]) (await q('routine', S.user.id)).forEach(x => S.rt[x.id] = x); // z. B. Start von Heute aus
   const r = rid ? S.rt[rid] : null;
   W = { day: S.day, start: Date.now(), routine_id: rid || null, name: r ? r.data.name : 'Freies Training', note: '', exercises: [], last: await lastMap() };
-  if (r) W.exercises = r.data.exercises.map(e => ({ name: e.name, target: e.reps || '', sets: [...preWarm(e.name), ...preSets(e.name, num(e.sets) || 3)] }));
+  if (r) W.exercises = r.data.exercises.map(e => exFor(e.name, e.reps, num(e.sets) || 3));
   drawWorkout();
 });
 const editWorkout = run(async id => {
@@ -1981,6 +1983,21 @@ function preWarm(name){ const l = W.last?.[(name || '').toLowerCase()]; return l
 function addWarm(i){ const e = W.exercises[i], k = e.sets.filter(s => s.warm).length, w0 = workSets(e)[0];
   const prev = e.sets.filter(s => s.warm).at(-1) || { kg: w0 && num(w0.kg) ? Math.round(num(w0.kg) / 2 / 2.5) * 2.5 : '', reps: 10 };
   e.sets.splice(k, 0, { kg: prev.kg, reps: prev.reps, warm: true, done: false }); e.open = true; drawWorkout(); }
+// Steigerung (doppelte Progression): Hat der schwerste Arbeitssatz der letzten Einheit das obere Ziel erreicht,
+// heute +2,5 kg und Wiederholungen aufs untere Ziel. Ohne Wiederholungsziel keine Steigerung.
+function progression(name, target){
+  const { from, to } = splitReps(target); if (!from) return null;
+  const l = W.last?.[(name || '').toLowerCase()], ws = l ? l.sets.filter(s => !s.warm && num(s.reps)) : [];
+  if (!ws.length) return null;
+  const top = ws.reduce((a, s) => num(s.kg) > num(a.kg) || (num(s.kg) === num(a.kg) && num(s.reps) > num(a.reps)) ? s : a, ws[0]);
+  if (!num(top.kg) || num(top.reps) < to) return null;
+  return { kg: num(top.kg) + 2.5, reps: from, lastKg: num(top.kg), lastReps: num(top.reps) };
+}
+function exFor(name, target, n){
+  const sets = [...preWarm(name), ...preSets(name, n)], pg = progression(name, target);
+  if (pg) sets.forEach(s => { if (!s.warm){ s.kg = pg.kg; s.reps = pg.reps; } });
+  return { name, target: target || '', sets, ...(pg ? { hint: pg } : {}) };
+}
 function preSets(name, n){
   const l = W.last?.[(name || '').toLowerCase()], ws = l ? l.sets.filter(s => !s.warm && num(s.reps)) : [];
   return Array.from({ length: n }, (_, j) => { const x = ws[j] || ws.at(-1); return { kg: x ? x.kg : '', reps: x ? x.reps : '', done: false }; });
@@ -2009,7 +2026,7 @@ function toggleSet(i, j){
 function setRow(i, j, s, cur, ls, no){
   const kgTxt = v => fmt1(num(v)).replace(',0', '');
   return `<div class="setrow ${s.done ? 'done' : ''} ${cur ? 'cur' : ''} ${s.warm ? 'warm' : ''}"><span class="n">${s.warm ? 'W' : no}</span><span class="prev">${ls ? `${kgTxt(ls.kg)} × ${esc(ls.reps)}` : '–'}</span>
-    <input class="${!s.done && !s.edited ? 'sug' : ''}" inputmode="decimal" aria-label="Gewicht in kg" placeholder="kg" value="${esc(s.kg)}" oninput="setVal(${i},${j},'kg',this.value)">
+    <input class="${!s.done && !s.edited ? 'sug' : ''}" inputmode="decimal" aria-label="Gewicht in kg" placeholder="kg" value="${esc(String(s.kg).replace('.', ','))}" oninput="setVal(${i},${j},'kg',this.value)">
     <input class="${!s.done && !s.edited ? 'sug' : ''}" inputmode="numeric" aria-label="Wiederholungen" placeholder="Wdh" value="${esc(s.reps)}" oninput="setVal(${i},${j},'reps',this.value)">
     <button class="chk ${s.done ? 'on' : ''} ${cur ? 'cur' : ''}" aria-label="${s.done ? 'Haken entfernen' : 'Satz abhaken'}" aria-pressed="${!!s.done}" onclick="toggleSet(${i},${j})">${I_CHK}</button></div>`;
 }
@@ -2027,12 +2044,13 @@ function drawWorkout(){
         ${exDone(e) ? `<button class="iconbtn" aria-label="Zuklappen" onclick="W.exercises[${i}].open=false;drawWorkout()" style="transform:rotate(180deg)">${I_DOWN}</button>` : ''}
         <button class="iconbtn" aria-label="Weitere Aktionen" aria-expanded="${!!e.menu}" onclick="W.exercises[${i}].menu=!W.exercises[${i}].menu;drawWorkout()">${I_DOTS}</button></div>
       <div class="exsub">${[eq, e.target ? `Ziel ${ws.length} × ${esc(e.target).replace('-', '–')}` : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
+      ${e.hint ? `<div class="prog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><span><b>Heute ${fmt1(e.hint.kg).replace(',0', '')} kg.</b> Letztes Mal ${e.hint.lastReps} Wdh. mit ${fmt1(e.hint.lastKg).replace(',0', '')} kg geschafft.</span></div>` : ''}
       ${e.menu ? `<div class="exmenu"><button class="btn sm ghost" ${e.sets.length ? '' : 'disabled'} onclick="removeSet(${i},${e.sets.length - 1})">Letzten Satz entfernen</button><button class="btn sm danger" onclick="removeEx(${i})">Übung entfernen</button></div>` : ''}
       ${e.sets.some(s => s.warm) ? `<div class="lbl warmlbl">Aufwärmen</div>${e.sets.map((s, j) => s.warm ? setRow(i, j, s, i === ci && j === cj, lastWarm(e.name, j), 'W') : '').join('')}` : ''}
       <div class="sethead lbl"><span>Satz</span><span>Vorher</span><span>kg</span><span>Wdh</span><span></span></div>
       ${e.sets.map((s, j) => s.warm ? '' : setRow(i, j, s, i === ci && j === cj, lastSet(e.name, wn), ++wn)).join('')}
       <div class="exbtns"><button class="btn ghost" onclick="addSet(${i})">Satz hinzufügen</button><button class="tbtn" onclick="addWarm(${i})">Aufwärmsatz</button></div></div>`; }).join('')}
-    <button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push({name:x.name,target:x.from?(x.from===x.to?String(x.from):x.from+'-'+x.to):'',sets:preSets(x.name,x.sets)}),back:drawWorkout})">+ Übung hinzufügen</button>
+    <button class="dashed" onclick="openExLib({have:()=>W.exercises.map(e=>e.name.toLowerCase()),onAdd:x=>W.exercises.push(exFor(x.name,x.from?(x.from===x.to?String(x.from):x.from+'-'+x.to):'',x.sets)),back:drawWorkout})">+ Übung hinzufügen</button>
     <label class="f" style="margin-top:16px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     ${W.id ? `<div class="btns"><button class="btn danger" onclick="deleteWorkout()">Einheit löschen</button></div>` : ''}
     </div><div class="wbar"><div class="wline"><i id="wline"></i></div><div class="wrow"><div id="restbar" class="restbar"></div><span id="autot">${autotHtml()}</span><button class="btn wsave" onclick="saveWorkout()">Speichern</button></div></div>`);
