@@ -291,6 +291,11 @@ textarea{min-height:120px;resize:vertical}
 .sheet-bg{position:absolute;inset:0;background:rgba(8,10,12,.55)}
 .sheet-card{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:var(--r-board) var(--r-board) 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
 @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-card.noanim{animation:none}
+.sheet[style*="height"]{bottom:auto}
+.sheet[style*="height"] .sheet-card{max-height:100%}
+.pstick{position:sticky;top:-16px;z-index:3;background:var(--bg);margin:-16px -16px 0;padding:16px 16px 8px}
+body.kbopen .bbar,body.kbopen .wbar{display:none}
 @media (prefers-reduced-motion:reduce){.sheet-card{animation:none}}
 /* Bewegung: Balken füllen beim Öffnen (300 ms), Akkordeon in Essen (200 ms) */
 @keyframes fill{from{width:0}}
@@ -779,7 +784,16 @@ async function render(){
   gameStats(S.me).then(updateLvl).catch(() => {});
 }
 function setWho(w){ S.who = w; render(); }
-function openSheet(html){ $('#sheetBody').innerHTML = html; $('#sheet').classList.remove('hidden'); }
+function openSheet(html, noanim){ const c = $('#sheetBody'); c.classList.toggle('noanim', !!noanim); c.innerHTML = html; $('#sheet').classList.remove('hidden'); fitKeyboard(); }
+// Bildschirmtastatur (iOS): Sheet auf den sichtbaren Bereich begrenzen, Korbleiste solange ausblenden
+function fitKeyboard(){
+  const vv = window.visualViewport, sh = $('#sheet'); if (!vv || !sh) return;
+  const kb = window.innerHeight - vv.height > 120 && document.activeElement?.matches('input,textarea');
+  document.body.classList.toggle('kbopen', !!kb);
+  sh.style.top = kb ? vv.offsetTop + 'px' : ''; sh.style.height = kb ? vv.height + 'px' : '';
+}
+if (window.visualViewport){ visualViewport.addEventListener('resize', fitKeyboard); visualViewport.addEventListener('scroll', fitKeyboard); }
+document.addEventListener('focusin', () => setTimeout(fitKeyboard, 50)); document.addEventListener('focusout', () => setTimeout(fitKeyboard, 50));
 function closeSheet(){ S.pdOpen = false; stopScan(); $('#sheet').classList.add('hidden'); $('#sheetBody').innerHTML = ''; }
 const sheetOpen = () => !$('#sheet').classList.contains('hidden');
 
@@ -1368,8 +1382,9 @@ function slotNow(){ const h = new Date().getHours(); return h < 11 ? 'fruehstuec
 function toggleSlot(k){ S.openSlot = S.openSlot === k ? null : k; render(); }
 function openFoodSearch(scan){
   const slot = S.openSlot || slotNow();
-  openPicker({ mode:'log', slot, title: slotName(slot), tab: scan ? 'scan' : 'suche' });
-  if (!scan) setTimeout(() => $('#pq')?.focus(), 50);
+  openPicker({ mode:'log', slot, title: slotName(slot), tab: scan ? 'scan' : 'suche', noanim: !scan });
+  // iOS öffnet die Tastatur nur bei focus() direkt im Tipp-Handler, nicht verzögert
+  if (!scan) $('#pq')?.focus();
 }
 async function rEssen(){
   const uid = viewId(), mine = own(), p = mine ? S.me : S.partner;
@@ -1450,11 +1465,11 @@ function setSlot(v){ P.slot = v; P.title = slotName(v); S.openSlot = v; drawPick
 function drawPicker(){
   stopScan();
   const tabs = [['suche','Zuletzt'], ...(P.mode === 'log' ? [['vorlage','Rezepte']] : []), ['eigen','Eigene']];
-  let h = `<div class="sh-head">${P.mode === 'log' ? `<label class="slotpick"><h3>Zu ${esc(slotName(P.slot))}</h3>${I_DOWN}<select aria-label="Mahlzeit wählen" onchange="setSlot(this.value)">${SLOTS.map(([k, l]) => `<option value="${k}" ${P.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : `<h3>${esc(P.title)}</h3>`}
+  let h = `<div class="pstick"><div class="sh-head">${P.mode === 'log' ? `<label class="slotpick"><h3>Zu ${esc(slotName(P.slot))}</h3>${I_DOWN}<select aria-label="Mahlzeit wählen" onchange="setSlot(this.value)">${SLOTS.map(([k, l]) => `<option value="${k}" ${P.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : `<h3>${esc(P.title)}</h3>`}
     <button class="btn sm ghost" onclick="pickerClose()">${P.mode === 'recipe' ? 'Zurück' : 'Schließen'}</button></div>
     <div class="searchrow big"><label class="sfield">${I_SEARCH}<input id="pq" type="search" placeholder="Lebensmittel suchen" enterkeyhint="search" value="${esc(P.q || '')}" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')doSearch()" onfocus="if(P.tab!=='suche'){P.tab='suche';drawPicker();$('#pq').focus()}"></label>
     <button class="sscan ${P.tab === 'scan' ? 'on' : ''}" aria-label="Barcode scannen" onclick="P.tab=P.tab==='scan'?'suche':'scan';drawPicker()">${I_SCAN}</button></div>
-    <div class="seg">${tabs.map(([k, l]) => `<button class="${P.tab === k ? 'on' : ''}" onclick="P.tab='${k}';drawPicker()">${l}</button>`).join('')}</div>`;
+    <div class="seg">${tabs.map(([k, l]) => `<button class="${P.tab === k ? 'on' : ''}" onclick="P.tab='${k}';drawPicker()">${l}</button>`).join('')}</div></div>`;
   if (P.tab === 'suche') h += `<div id="pres"><p class="muted">Lädt …</p></div>`;
   if (P.tab === 'scan') h += `<div id="reader"></div><p class="small muted">Scanne nacheinander alle Produkte, jedes landet direkt im Korb. Oder die Nummer eintippen:</p><div class="searchrow"><input id="bc" inputmode="numeric" placeholder="Barcode-Nummer"><button class="btn" onclick="lookupCode($('#bc').value.trim())">Suchen</button></div><div id="scanmsg"></div>`;
   if (P.tab === 'vorlage'){
@@ -1476,7 +1491,7 @@ function drawPicker(){
       <button class="btn full ghost" onclick="saveQuick()">Schnelleintrag speichern</button></div>`;
   }
   h += '<div id="bbar"></div>';
-  openSheet(h);
+  openSheet(h, P.noanim); P.noanim = false;
   basketBar();
   if (P.tab === 'scan') startScan();
   if (P.tab === 'suche' && P.lib){ if (P.q) liveSearch(P.q, P.results); else showLib(); }
