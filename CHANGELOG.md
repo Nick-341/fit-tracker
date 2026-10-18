@@ -15,6 +15,7 @@
 - Kalender: Tipp auf das Datum (Heute, Essen) öffnet die Monatsansicht mit „im Ziel“, „geloggt“ und Training, Monatsbilanz, offline aus dem Cache
 - Körper: Trend lesbar – „1,3 kg in 4 Wochen“ mit Tempo pro Woche, Achse in ganzen kg, Datumsmarken, Start- und Endwert, Legende; unter 7 Wiegungen Hinweis statt Linie, Lücken über 14 Tage unterbrechen die Linie
 - Design-System: Zahlenfeld, Rückgängig-Leiste, Haken-Zustände und Trend-Diagramm im Skill; Umbruch-Prüfung um die neuen Screens erweitert
+- Anleitung: „Neu in 1.6.1“, In-App „Was ist neu“ aktualisiert
 - Fehlerbehebung: „Starten“ auf Heute öffnete eine leere Einheit, wenn der Training-Tab noch nicht offen war
 
 ## 1.6.0.1 – 17.10.2026

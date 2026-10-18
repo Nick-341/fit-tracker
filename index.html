@@ -1162,9 +1162,14 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.6.0.1';
+const APP_VERSION = '1.6.1';
 const CHANGELOG = [
-  ['Fehlerbehebungen', 'Lange Namen werden nicht mehr mitten im Wort getrennt, zu lange Titel enden mit „…“. Das Suchfeld und die Kalorien-Tafel unter Essen sehen wieder richtig aus, auf kleineren iPhones passt die Gewichtstafel.']
+  ['Satz abhaken', 'Sätze sind mit deinen Werten vom letzten Mal vorausgefüllt. Ein Tipp auf den Haken bestätigt den Satz und startet die Pause, erledigte Übungen klappen zu.'],
+  ['Mehr Gewicht, wenn es Zeit ist', 'Hast du das obere Wiederholungsziel geschafft, schlägt Spotter 2,5 kg mehr vor. Aufwärmsätze haben einen eigenen Bereich und zählen nicht für Volumen, Bestwerte und XP.'],
+  ['Eigenes Zahlenfeld', 'Gewicht, Wiederholungen, Mengen und Maße tippst du mit großen Tasten und ± ein. „Weiter“ springt zum nächsten Feld, „Abhaken“ hakt den Satz direkt ab.'],
+  ['Rückgängig statt Nachfragen', 'Gelöscht wird ohne Rückfrage. Fünf Sekunden lang holst du alles mit „Rückgängig“ zurück.'],
+  ['Kalender und Trend', 'Tipp oben auf das Datum: Der Monat zeigt, wann du im Ziel warst. Unter Körper liest du jetzt direkt ab, wie viel sich dein Gewicht in welchem Zeitraum verändert hat.'],
+  ['Fehlerbehebungen', 'Die Suche bleibt beim Tippen über der Tastatur sichtbar. „Starten“ auf Heute lädt immer die Übungen des Trainingstags.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>

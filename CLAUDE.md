@@ -22,6 +22,7 @@ Externe Bibliotheken (per `<script>` mit SRI-Prüfsumme, exakt gepinnt): `@supab
 ## Datenmodell (Supabase)
 - `profiles`: `id`, `display_name`, `invite_code`, `partner_id`, `data` (jsonb: Rechner-Eingaben, `targets`, `share`, `game`-Snapshot, `avatar`, `theme`, `rest`, `restAuto`, `restSound`, …).
 - `entries`: `id`, `user_id`, `kind`, `day`, `data` (jsonb). Kinds: `log`, `recipe`, `food`, `routine`, `workout`, `weight`, `measure`, `kudos`, `mealshare`, `shareack`.
+- `workout.data.exercises[].sets[]`: `{ kg, reps, warm? }`. `warm: true` = Aufwärmsatz (zählt nicht für Volumen, Bestwerte, XP, Übungsfortschritt; immer über `isWork` filtern). `routine.data.exercises[].reps` = Wiederholungsbereich „6-8“ oder leer (kein Ziel).
 - Sichtbarkeit: eigene Daten immer, Partner nur bei gegenseitiger Verknüpfung (`is_partner`) und gemäß Freigaben (`can_view`). Kinds ohne Kategorie sind für den Partner **immer** sichtbar. Details im Skill `datenbank`.
 - Storage-Bucket `avatars` (privat, nur Besitzer + Partner).
 
@@ -40,6 +41,10 @@ Externe Bibliotheken (per `<script>` mit SRI-Prüfsumme, exakt gepinnt): `@supab
 - Keine Einstellungen für das Heute-Layout, stattdessen gutes Standard-Layout.
 - „Im Ziel“ (±10 % vom Kalorienziel, mind. halbes Ziel geloggt) gibt es nur einmal: `inTarget()`. Level-System, Wochenleiste und Wochenrückblick nutzen dieselbe Funktion.
 - Training „Als Nächstes“: der Trainingstag, der am längsten nicht trainiert wurde (`nextRoutine`). Feste Wochentage für Trainingstage gibt es noch nicht.
+- Einheit: Gespeichert werden abgehakte und von Hand geänderte Sätze; nur vorausgefüllte ohne Haken fallen weg (Hinweis mit Rückgängig). Steigerung +2,5 kg für alle Übungen, Wdh. aufs untere Ziel.
+- Löschen ohne Nachfrage mit Rückgängig (`softDel`/`undoBar`) für Einträge, Sätze, Übungen, Einheiten, Gewicht, Maße. Trainingstage, Vorlagen, Abmelden, Verknüpfung lösen behalten die Nachfrage.
+- Zahleneingaben über das eigene Zahlenfeld (`npOpen`), nicht über `<input>`. Ausnahmen: Suche, Texte, Kalorienrechner, Nährwerte eigener Lebensmittel, Trainingstag-Editor.
+- Kalender lädt pro Monat über `q` (gecacht). `qPaged` hat bewusst keinen Cache.
 - Pausenleiste in der Einheit: „+30 s“ und „×“ direkt, −15/+15 nach Tipp auf die Restzeit. Timer-Knöpfe nie im 250-ms-Takt neu bauen (Taps gehen sonst verloren).
 - Keine Yazio-Anbindung (inoffizielle API, Nutzungsbedingungen, Stabilität). BLS (Bundeslebensmittelschlüssel, seit 2025 kostenlos) als mögliche spätere Ergänzung.
 - Bleibt vorerst Web-App (PWA). Native App via Capacitor + TestFlight erst bei konkretem Bedarf (Apple Health, Push).
