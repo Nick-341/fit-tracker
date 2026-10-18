@@ -186,6 +186,59 @@ def flow_menge(ctx):
     check('geändert' in toast(pg), 'Eintrag bearbeiten ändert direkt')
     return pg
 
+def flow_rueckgaengig(ctx):
+    pg = open_app(ctx)
+    dialogs = []; pg.on('dialog', lambda d: (dialogs.append(d.message), d.dismiss()))
+    pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(500)
+    pg.click('.mhead >> nth=0'); pg.wait_for_timeout(300)
+    left0 = pg.inner_text('.eboard .num')
+    pg.click('.mexp [aria-label="Eintrag löschen"] >> nth=0'); pg.wait_for_timeout(400); shot(pg, 'rueckgaengig')
+    check('Skyr gelöscht' in pg.inner_text('#undo') and pg.inner_text('.eboard .num') != left0, 'Löschen ohne Dialog, sofort ausgeblendet, Leiste „Skyr gelöscht“')
+    r = pg.evaluate("(()=>{const u=document.querySelector('#undo').getBoundingClientRect(),f=document.querySelector('.fbar').getBoundingClientRect();return u.bottom<=f.top})()")
+    check(r, 'Rückgängig-Leiste über der unteren Leiste')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(400)
+    check(pg.inner_text('.eboard .num') == left0, 'Rückgängig stellt den Eintrag wieder her')
+    pg.evaluate("S.openSlot='fruehstueck'; render()"); pg.wait_for_timeout(300)
+    pg.click('.mexp [aria-label="Eintrag löschen"] >> nth=0'); pg.wait_for_timeout(5600)
+    pg.evaluate("render()"); pg.wait_for_timeout(500)
+    check(pg.inner_text('.eboard .num') != left0 and not pg.inner_text('#undo'), 'Nach 5 s endgültig gelöscht')
+    # offline: Rückgängig sendet nichts, Verlassen der Ansicht führt das Löschen aus (Warteschlange)
+    ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
+    pg.evaluate("S.openSlot='mittag'; render()"); pg.wait_for_timeout(300)
+    pg.click('.mexp [aria-label="Eintrag löschen"] >> nth=0'); pg.wait_for_timeout(300)
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(300)
+    check(pg.evaluate('QUEUE.length') == 0, 'Offline: Rückgängig sendet nichts')
+    pg.evaluate("S.openSlot='mittag'; render()"); pg.wait_for_timeout(300)
+    pg.click('.mexp [aria-label="Eintrag löschen"] >> nth=0'); pg.wait_for_timeout(300)
+    pg.click('#tabs >> text=Heute'); pg.wait_for_timeout(500)
+    check(pg.evaluate("QUEUE.filter(o=>o.op==='delete').length") == 1, 'Offline: Verlassen der Ansicht führt das Löschen aus')
+    ctx.set_offline(False); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1200)
+    # Einheit, Satz, Übung, Gewicht
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(600)
+    pg.click('.ex >> nth=0 >> [aria-label="Weitere Aktionen"]'); pg.click('text=Letzten Satz entfernen'); pg.wait_for_timeout(200)
+    check(pg.evaluate('W.exercises[0].sets.length') == 3 and 'Satz gelöscht' in pg.inner_text('#undo'), 'Satz löschen mit Rückgängig')
+    r = pg.evaluate("(()=>{const u=document.querySelector('#undo').getBoundingClientRect(),w=document.querySelector('.wbar').getBoundingClientRect();return u.bottom<=w.top})()")
+    check(r, 'Im Training sitzt die Leiste über der Pausenleiste')
+    pg.click('#undo >> text=Rückgängig'); check(pg.evaluate('W.exercises[0].sets.length') == 4, 'Satz wiederhergestellt')
+    pg.click('.ex >> nth=1 >> [aria-label="Weitere Aktionen"]'); pg.click('text=Übung entfernen'); pg.wait_for_timeout(200)
+    pg.click('#undo >> text=Rückgängig'); check(pg.evaluate('W.exercises.length') == 2, 'Übung wiederhergestellt')
+    pg.evaluate("clearDraft(); closeSheet()")
+    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(500)
+    n = len(pg.query_selector_all('.trow2'))
+    pg.click('.trow2 >> nth=0'); pg.click('#sheetBody >> text=Bearbeiten'); pg.wait_for_timeout(500)
+    pg.click('text=Einheit löschen'); pg.wait_for_timeout(400)
+    check(len(pg.query_selector_all('.trow2')) == n - 1, 'Einheit gelöscht ohne Dialog')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(400)
+    check(len(pg.query_selector_all('.trow2')) == n, 'Einheit wiederhergestellt')
+    pg.click('#tabs >> text=Körper'); pg.wait_for_timeout(500)
+    pg.click('text=Gewicht eintragen'); pg.wait_for_timeout(400); pg.click('#numpad [aria-label="Zahlenfeld schließen"]')
+    pg.click('text=Eintrag löschen'); pg.wait_for_timeout(400)
+    check('Gewicht gelöscht' in pg.inner_text('#undo') and 'heute' not in pg.inner_text('.board .bhead'), 'Gewicht löschen mit Rückgängig')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(400)
+    check('heute' in pg.inner_text('.board .bhead'), 'Gewicht wiederhergestellt')
+    check(not dialogs, 'Keine Nachfrage-Dialoge beim Löschen')
+    return pg
+
 def flow_essen_teilen(ctx):
     pg = open_app(ctx)
     check(pg.query_selector('.sharein') is not None, 'Geschickte Mahlzeit erscheint')
@@ -478,7 +531,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_menge, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():

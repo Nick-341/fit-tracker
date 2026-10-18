@@ -645,7 +645,13 @@ async function q(kind, uid, from, to){
     if (!NET_ERR(e)) throw e;
     setOnline(false); rows = cacheGet(key) || cacheNear(kind, uid) || [];
   }
-  return applyQueue(rows, kind, uid, from, to);
+  return applyQueue(rows, kind, uid, from, to).filter(r => !PEND.has(r.id));
+}
+// Gelöscht, aber noch rückgängig machbar: in allen Abfragen ausgeblendet, del() erst nach Ablauf
+const PEND = new Set();
+function softDel(id, label){
+  PEND.add(id); render();
+  undoBar(`${label} gelöscht`, () => { PEND.delete(id); render(); }, async () => { try { await del(id); } catch (e) { toast('Löschen fehlgeschlagen'); } PEND.delete(id); });
 }
 const tmpId = () => 'tmp-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 function enqueue(o){ QUEUE.push({ ...o, at: new Date().toISOString() }); saveQueue(); setOnline(false); }
@@ -838,6 +844,7 @@ async function render(){
   const t = ++RT;
   renderHeader();
   const v = $('#view'), enter = v.dataset.tab !== S.tab;
+  if (enter) commitUndo(); // Ansicht verlassen: ausstehendes Löschen jetzt ausführen
   if (!v.dataset.tab || v.dataset.tab !== S.tab) v.innerHTML = '<p class="muted pad">Lädt …</p>';
   try {
     const html = await ({ heute:rHeute, essen:rEssen, training:rTraining, koerper:rKoerper, profil:rProfil })[S.tab]();
@@ -849,6 +856,7 @@ async function render(){
   } catch (e) {
     if (t === RT) v.innerHTML = `<p class="err pad">Laden fehlgeschlagen: ${esc(e.message || e)}. Prüfe deine Internetverbindung und tippe dann erneut auf den Tab.</p>`;
   }
+  placeUndo();
   gameStats(S.me).then(updateLvl).catch(() => {});
 }
 function setWho(w){ S.who = w; render(); }
@@ -862,7 +870,7 @@ function fitKeyboard(){
 }
 if (window.visualViewport){ visualViewport.addEventListener('resize', fitKeyboard); visualViewport.addEventListener('scroll', fitKeyboard); }
 document.addEventListener('focusin', () => setTimeout(fitKeyboard, 50)); document.addEventListener('focusout', () => setTimeout(fitKeyboard, 50));
-function closeSheet(){ S.pdOpen = false; npClose(); stopScan(); $('#sheet').classList.add('hidden'); $('#sheetBody').innerHTML = ''; }
+function closeSheet(){ S.pdOpen = false; npClose(); if (UNDO?.scope === 'sheet') commitUndo(); stopScan(); $('#sheet').classList.add('hidden'); $('#sheetBody').innerHTML = ''; }
 const sheetOpen = () => !$('#sheet').classList.contains('hidden');
 
 /* ================= Heute ================= */
@@ -1247,16 +1255,17 @@ function npClose(){
 /* ================= Rückgängig-Leiste ================= */
 // Zeigt 5 s eine Leiste über der unteren Leiste. onUndo bei „Rückgängig“, onCommit nach Ablauf oder beim Verlassen.
 let UNDO = null;
-function undoBar(text, onUndo, onCommit, ms = 5000){
+function undoBar(text, onUndo, onCommit, scope = 'view', ms = 5000){
   commitUndo();
-  UNDO = { onUndo, onCommit, t: setTimeout(commitUndo, ms) };
+  UNDO = { onUndo, onCommit, scope, t: setTimeout(commitUndo, ms) };
   const el = $('#undo');
   el.innerHTML = `<div class="undobar" role="status"><span>${esc(text)}</span><button onclick="doUndo()">Rückgängig</button><i style="animation-duration:${ms}ms"></i></div>`;
   placeUndo();
 }
 function placeUndo(){
   const el = $('#undo'); if (!el || !el.firstChild) return;
-  const tops = [...document.querySelectorAll('.wbar,.bbar,.fbar,.tabs-in')].filter(x => x.offsetParent && !$('#sheet').classList.contains('hidden') === !!x.closest('#sheet')).map(x => x.getBoundingClientRect().top).filter(t => t > innerHeight * 0.5);
+  const inSheet = !$('#sheet').classList.contains('hidden');
+  const tops = [...document.querySelectorAll('.wbar,.bbar,.fbar,.tabs-in')].filter(x => x.getClientRects().length && inSheet === !!x.closest('#sheet')).map(x => x.getBoundingClientRect().top).filter(t => t > innerHeight * 0.5);
   el.style.bottom = (innerHeight - (tops.length ? Math.min(...tops) : innerHeight) + 8) + 'px';
 }
 function commitUndo(){ const u = UNDO; if (!u) return; UNDO = null; clearTimeout(u.t); $('#undo').innerHTML = ''; if (u.onCommit) u.onCommit(); }
@@ -1552,7 +1561,7 @@ async function rEssen(){
   if (mine) h += `<div class="fbar"><button class="fsearch" onclick="openFoodSearch(false)">${I_SEARCH}<span>Lebensmittel suchen</span></button><button class="fscan" aria-label="Barcode scannen" onclick="openFoodSearch(true)">${I_SCAN}</button></div>`;
   return h;
 }
-const delLog = run(async id => { await del(id); render(); });
+function delLog(id){ softDel(id, S.logIdx?.[id]?.data.name || 'Eintrag'); }
 
 /* ---------- Lebensmittel-Auswahl mit Sammelkorb ---------- */
 let P = null;
@@ -2178,10 +2187,12 @@ function drawWorkout(){
     <label class="f" style="margin-top:16px"><span>Notiz</span><input value="${esc(W.note || '')}" oninput="W.note=this.value" placeholder="z. B. Schulter gezwickt, Schlaf schlecht"></label>
     ${W.id ? `<div class="btns"><button class="btn danger" onclick="deleteWorkout()">Einheit löschen</button></div>` : ''}
     </div><div class="wbar"><div class="wline"><i id="wline"></i></div><div class="wnext" id="wnext"></div><div class="wrow"><div id="restbar" class="restbar"></div><span id="autot">${autotHtml()}</span><button class="btn wsave" onclick="saveWorkout()">Speichern</button></div></div>`);
-  tickRest(); wMeta(); saveDraft();
+  tickRest(); wMeta(); saveDraft(); placeUndo();
 }
-function removeSet(i, j){ W.exercises[i].sets.splice(j, 1); W.exercises[i].menu = false; drawWorkout(); }
-function removeEx(i){ W.exercises.splice(i, 1); drawWorkout(); }
+function removeSet(i, j){ const e = W.exercises[i], [st] = e.sets.splice(j, 1); e.menu = false; drawWorkout();
+  undoBar(st.warm ? 'Aufwärmsatz gelöscht' : 'Satz gelöscht', () => { e.sets.splice(j, 0, st); drawWorkout(); }, null, 'sheet'); }
+function removeEx(i){ const [e] = W.exercises.splice(i, 1); e.menu = false; drawWorkout();
+  undoBar(`${e.name || 'Übung'} gelöscht`, () => { W.exercises.splice(i, 0, e); drawWorkout(); }, null, 'sheet'); }
 function addSet(i){ const s = W.exercises[i].sets; const prev = workSets(W.exercises[i]).at(-1) || { kg:'', reps:'' }; s.push({ kg: prev.kg, reps: prev.reps, done: false }); W.exercises[i].open = true; drawWorkout(); }
 const saveWorkout = run(async () => {
   // Gespeichert werden abgehakte und von Hand geänderte Sätze; nur vorausgefüllte ohne Haken fallen weg
@@ -2196,7 +2207,7 @@ const saveWorkout = run(async () => {
   stopRest(); clearDraft(); closeSheet(); toast(navigator.onLine ? 'Einheit gespeichert' : 'Offline gespeichert, wird später hochgeladen'); render();
   if (skipped) undoBar(`${skipped} ${skipped === 1 ? 'Satz' : 'Sätze'} ohne Haken nicht gespeichert`, run(async () => { await upd(id, { ...base, exercises: all }); toast('Sätze ergänzt'); render(); }));
 });
-const deleteWorkout = run(async () => { if (!confirm('Einheit löschen?')) return; await del(W.id); clearDraft(); closeSheet(); render(); });
+function deleteWorkout(){ const id = W.id, n = W.name; clearDraft(); closeSheet(); softDel(id, n ? `„${n}“` : 'Einheit'); }
 function saveDraft(){ if (!W) return; const { last, ...rest } = W; LSS('spotter:wo-draft', { w: rest, at: Date.now(), uid: S.user.id }); }
 function clearDraft(){ try { localStorage.removeItem('spotter:wo-draft'); } catch (e) {} }
 const getDraft = () => { const d = LSJ('spotter:wo-draft', null); return d && d.uid === S.user?.id ? d : null; };
@@ -2281,7 +2292,7 @@ const openWeight = run(async () => {
   openSheet(`<div class="sh-head"><h3>Gewicht ${dayLabel(S.day) === 'Heute' ? 'heute' : 'am ' + shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     <p class="small muted" style="margin-top:0">Morgens nüchtern wiegen. ${tw ? 'Für diesen Tag ist schon ein Wert eingetragen.' : lw ? 'Vorausgefüllt mit deinem letzten Wert.' : ''}</p>
     <button class="amtval" id="wkg" aria-label="Gewicht in kg" onclick="weightPad()"><b class="num">${KW.v ? npFmt(KW.v) : '–'}</b><span class="unit">kg</span></button>
-    <div class="btns amtbtn"><button class="btn accent full big" onclick="saveWeight()">Eintragen</button></div>`);
+    <div class="btns amtbtn"><button class="btn accent full big" onclick="saveWeight()">Eintragen</button>${KW.id ? `<button class="btn danger full" onclick="closeSheet();softDel('${KW.id}','Gewicht')">Eintrag löschen</button>` : ''}</div>`);
   weightPad();
 });
 let KW = null;
@@ -2299,7 +2310,7 @@ function drawMeasure(){
   openSheet(`<div class="sh-head"><h3>Maße am ${shortDate(S.day)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     <p class="small muted" style="margin-top:0">In cm. Tippe auf ein Maß, „Weiter“ springt zum nächsten. Nur angetippte Maße werden gespeichert.</p>
     <div class="list">${MEAS.map(([k, l]) => `<button class="row tap mrow2 ${KM.set[k] ? '' : 'sugrow'}" id="mm_${k}" onclick="measurePad('${k}')"><span class="grow t">${l}</span><span><b class="num n20">${KM.v[k] ? npFmt(KM.v[k]) : '–'}</b><span class="unit">cm</span></span></button>`).join('')}</div>
-    <div class="btns amtbtn"><button class="btn accent full big" onclick="saveMeasure()">Eintragen</button></div>`);
+    <div class="btns amtbtn"><button class="btn accent full big" onclick="saveMeasure()">Eintragen</button>${KM.id ? `<button class="btn danger full" onclick="closeSheet();softDel('${KM.id}','Maße vom ${shortDate(S.day)}')">Maße löschen</button>` : ''}</div>`);
 }
 function measurePad(k){
   const i = MEAS.findIndex(m => m[0] === k), last = i === MEAS.length - 1;
