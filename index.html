@@ -346,6 +346,25 @@ h3.sub{font-size:20px;margin-bottom:8px}
 .prog{display:flex;gap:12px;align-items:flex-start;background:var(--hint);border-radius:var(--r-btn);padding:12px 16px;font-size:15px;margin:0 0 12px}
 .prog svg{flex:none;color:var(--mine);margin-top:2px}
 .setrow.warm .n,.setrow.warm .nf{color:var(--muted)}
+/* Mengen-Sheet */
+.amthead{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.amthead .tbtn{display:flex;align-items:center;gap:4px;font-size:16px}
+.amtname{font-size:26px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amtrow{display:flex;gap:8px;align-items:stretch}
+.amtval{flex:1;min-width:0;min-height:72px;border:2px solid var(--line);border-radius:var(--r-card);background:var(--pad);color:var(--ink);display:flex;align-items:baseline;gap:8px;padding:8px 16px;text-align:left}
+.amtval .num{font-size:48px;line-height:1.1}
+.amtval.npact{border-color:var(--accent)}
+.amtunit{flex:none;width:42%;display:flex;flex-direction:column;justify-content:center;gap:4px;background:var(--surface);border-radius:var(--r-card);padding:4px;text-align:center;font-weight:800}
+.amtunit button{border:0;background:none;color:var(--ink);font-weight:800;min-height:36px;border-radius:var(--r-btn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amtunit button.on{background:var(--ink);color:var(--bg)}
+.amtnut{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.slotchips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.slotchips button{border:0;border-radius:var(--r-btn);background:var(--surface);color:var(--muted);font-weight:800;font-size:14px;min-height:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.slotchips button.on{background:var(--ink);color:var(--bg)}
+body.npopen .amtbtn{display:none}
+.nfbig{width:100%;min-height:52px;font-size:20px;text-align:left;padding:0 16px;border-color:var(--line)}
+.nf.gin{width:76px;min-height:40px;border-color:var(--line)}
+
 /* Zahlenfeld */
 .np{position:fixed;left:0;right:0;bottom:0;z-index:24;background:var(--surface);border-radius:var(--r-board) var(--r-board) 0 0;padding:16px 12px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 32px rgba(0,0,0,.2);display:none;max-width:560px;margin:0 auto}
 .np.show{display:block}
@@ -1314,7 +1333,7 @@ function drawEntry(){
   const l = EN.l, d = l.data, canG = d.per && d.grams;
   openSheet(`<div class="sh-head"><h3>${esc(d.name)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     <div class="card"><b class="num n36" id="enk">${fmt(canG ? scale(d.per, EN.grams).kcal : d.kcal)} kcal</b><div class="small muted">Protein ${fmt1(d.p)} g, Kohlenhydrate ${fmt1(d.c)} g, Fett ${fmt1(d.f)} g</div></div>
-    ${canG ? `<div class="sec" style="margin-top:16px"><label class="f"><span>Menge in g</span><div class="searchrow" style="margin:0"><input inputmode="decimal" value="${EN.grams}" oninput="EN.grams=num(this.value);$('#enk').textContent=fmt(scale(EN.l.data.per,EN.grams).kcal)+' kcal'"><button class="btn" onclick="entryGrams()">Ändern</button></div></label></div>` : ''}
+    ${canG ? `<div class="sec" style="margin-top:16px"><div class="f"><span>Menge in g</span><button class="nf nfbig" id="eng" aria-label="Menge in Gramm" onclick="npOpen({sel:'#eng',value:EN.grams,step:10,go:'Speichern',label:'Menge in Gramm',onInput:v=>{EN.grams=num(v);$('#eng').textContent=v+' g';$('#enk').textContent=fmt(scale(EN.l.data.per,EN.grams).kcal)+' kcal'},onGo:entryGrams})">${fmt(EN.grams)} g</button></div></div>` : ''}
     <div class="sec"><h3 style="margin-bottom:8px">Kopieren oder verschieben</h3>
       <div class="grid2"><label class="f"><span>Tag</span><input type="date" value="${EN.day}" max="${today()}" onchange="EN.day=this.value"></label>
       <label class="f"><span>Mahlzeit</span><select onchange="EN.slot=this.value">${slotOpts(EN.slot)}</select></label></div>
@@ -1323,7 +1342,7 @@ function drawEntry(){
     <div class="btns"><button class="btn danger full" onclick="delLog('${l.id}');closeSheet()">Eintrag löschen</button></div>`);
 }
 const entryGrams = run(async () => {
-  const d = EN.l.data; if (!EN.grams) return toast('Bitte eine Menge eingeben');
+  const d = EN.l.data; if (!EN.grams) return toast('Bitte eine Menge eingeben'); npClose();
   await upd(EN.l.id, { ...d, grams: EN.grams, ...roundN(scale(d.per, EN.grams)) });
   closeSheet(); toast('Menge geändert'); render();
 });
@@ -1628,17 +1647,42 @@ function quickAdd(k){
   if (j >= 0){ P.basket.splice(j, 1); basketBar(); refreshResults(); } else basketAdd(f, true);
 }
 function refreshResults(){ if (!$('#pres')) return; const sec = [...$('#pres').querySelectorAll('.lbl')]; if (P.tab === 'eigen' || P.q || !sec.length) showResults([['', P.results]]); else showLib(); }
+// Mengen-Sheet: Wertfeld mit Zahlenfeld, Einheit Gramm oder Portion, Live-Nährwerte, Mahlzeit.
+// Korb leer: „Eintragen“ speichert sofort. Korb nicht leer: „In den Korb“, eingetragen wird über die Korbleiste.
+const amtGrams = () => P.amt.unit === 'p' ? P.amt.v * P.amt.f.portion : P.amt.v;
+const amtGo = () => P.basket.length ? 'In den Korb' : 'Eintragen';
 function drawAmount(k){
-  const f = P.results[k]; P.amt = { f, g: r0(f.serving || 100) };
-  const opts = [...new Set([r0(f.serving || 0), 50, 100, 150, 200].filter(Boolean))];
-  openSheet(`<div class="sh-head"><h3>${esc(f.name)}</h3><button class="btn sm ghost" onclick="drawPicker()">Zurück</button></div>
-    <label class="f"><span>Menge in g</span><input id="ag" inputmode="decimal" value="${P.amt.g}" oninput="P.amt.g=num(this.value);amtPrev()"></label>
-    <div class="quick">${opts.map(g => `<button class="btn sm ghost" onclick="$('#ag').value='${g}';P.amt.g=${g};amtPrev()">${g} g</button>`).join('')}</div>
-    <div class="card" id="aprev"></div>
-    <div class="btns"><button class="btn accent full" onclick="basketAdd({...P.amt.f,serving:P.amt.g},true);drawPicker()">In den Korb</button></div>`);
-  amtPrev();
+  const f = P.results[k];
+  P.amt = { f, unit: 'g', v: r0(f.serving || f.portion || 100) };
+  const per = f.per, last = f.last && f.serving ? r0(f.serving) : 0;
+  openSheet(`<div class="amthead"><button class="tbtn" onclick="npClose();drawPicker()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Zurück</button>${last ? `<span class="lbl">Zuletzt ${fmt(last)} g</span>` : ''}</div>
+    <h3 class="amtname">${esc(f.name)}</h3><p class="small muted" style="margin:4px 0 16px">100 g · ${fmt(per.kcal)} kcal · ${fmt(per.p)} g Protein</p>
+    <div class="amtrow"><button class="amtval" id="amtv" aria-label="Menge" onclick="amtPad()"></button>
+      <div class="amtunit">${f.portion ? `<button class="${P.amt.unit === 'g' ? 'on' : ''}" onclick="amtUnit('g')">Gramm</button><button class="${P.amt.unit === 'p' ? 'on' : ''}" onclick="amtUnit('p')">Portion ${fmt(f.portion)} g</button>` : '<span>Gramm</span>'}</div></div>
+    <div class="card amtnut" id="aprev"></div>
+    <div class="slotchips">${SLOTS.map(([s, l]) => `<button class="${P.slot === s ? 'on' : ''}" onclick="P.slot='${s}';P.title=slotName('${s}');S.openSlot='${s}';this.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===this))">${l.replace('essen', '')}</button>`).join('')}</div>
+    <div class="btns amtbtn"><button class="btn accent full big" onclick="amtSave()">${amtGo()}</button></div>`);
+  amtShow(); amtPad();
 }
-function amtPrev(){ const v = scale(P.amt.f.per, P.amt.g); $('#aprev').innerHTML = `<b class="num n36">${fmt(v.kcal)}</b><span class="unit">kcal</span><div class="small muted" style="margin-top:8px">Protein ${fmt1(v.p)} g · Kohlenhydrate ${fmt1(v.c)} g · Fett ${fmt1(v.f)} g</div>`; }
+function amtUnit(u){ if (P.amt.unit === u) return; const g = amtGrams(); P.amt.unit = u; P.amt.v = u === 'p' ? Math.max(0.5, Math.round(g / P.amt.f.portion * 2) / 2) : r0(g); drawAmountKeep(); }
+function drawAmountKeep(){ document.querySelectorAll('.amtunit button').forEach((b, i) => b.classList.toggle('on', (i === 0) === (P.amt.unit === 'g'))); amtShow(); amtPad(); }
+function amtShow(){
+  const v = scale(P.amt.f.per, amtGrams());
+  $('#amtv').innerHTML = `<b class="num">${npFmt(P.amt.v)}</b><span class="unit">${P.amt.unit === 'p' ? (P.amt.v === 1 ? 'Portion' : 'Portionen') : 'g'}</span>`;
+  $('#aprev').innerHTML = [['kcal', fmt(v.kcal)], ['Protein', fmt1(v.p).replace(',0', '') + ' g'], ['Carbs', fmt1(v.c).replace(',0', '') + ' g'], ['Fett', fmt1(v.f).replace(',0', '') + ' g']].map(([l, x]) => `<div><div class="lbl">${l}</div><b class="num n24">${x}</b></div>`).join('');
+}
+function amtPad(){
+  npOpen({ sel: '#amtv', value: npFmt(P.amt.v), step: P.amt.unit === 'p' ? 0.5 : 10, go: amtGo(), label: P.amt.unit === 'p' ? 'Portionen' : 'Menge in Gramm',
+    onInput: v => { P.amt.v = num(v); amtShow(); }, onGo: amtSave });
+}
+const amtSave = run(async () => {
+  const g = r0(amtGrams()), f = P.amt.f; if (!g) return toast('Bitte eine Menge eingeben');
+  npClose();
+  if (P.basket.length){ basketAdd({ ...f, serving: g }, true); drawPicker(); return; }
+  await add('log', S.day, { slot: P.slot, name: f.name, grams: g, per: f.per, ...roundN(scale(f.per, g)) });
+  S.openSlot = P.slot; toast(`${f.name}: ${fmt(g)} g eingetragen`); P.lib = null; drawPicker(); render();
+  P.lib = await loadLib(); if (P.tab === 'suche' && !P.q) showLib();
+});
 function basketAdd(food, silent){
   const g = r0(food.serving || 100);
   P.basket.push({ name: food.name, brand: food.brand || '', grams: g, per: food.per });
@@ -1658,7 +1702,7 @@ function drawBasket(){
   openSheet(`<div class="sh-head"><h3>Korb</h3><button class="btn sm ghost" onclick="drawPicker()">Weitere hinzufügen</button></div>
     ${P.mode === 'log' ? `<label class="f"><span>Mahlzeit</span><select onchange="P.slot=this.value">${SLOTS.map(([k, l]) => `<option value="${k}" ${P.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
     <div class="list">${P.basket.map((b, i) => `<div class="row"><div class="grow"><div class="t">${esc(b.name)}</div><div class="s" id="bk${i}">${fmt(scale(b.per, b.grams).kcal)} kcal</div></div>
-      <input class="gin" inputmode="decimal" value="${b.grams}" aria-label="Menge in Gramm" oninput="P.basket[${i}].grams=num(this.value);$('#bk${i}').textContent=fmt(scale(P.basket[${i}].per,P.basket[${i}].grams).kcal)+' kcal';basketSum()"><span class="small muted">g</span>
+      <button class="nf gin" id="bg${i}" aria-label="Menge in Gramm für ${esc(b.name)}" onclick="npOpen({sel:'#bg${i}',value:P.basket[${i}].grams,step:10,go:'Fertig',label:'Menge in Gramm',onInput:v=>{P.basket[${i}].grams=num(v);$('#bg${i}').textContent=v;$('#bk${i}').textContent=fmt(scale(P.basket[${i}].per,P.basket[${i}].grams).kcal)+' kcal';basketSum()},onGo:npClose})">${b.grams}</button><span class="small muted">g</span>
       <button class="iconbtn" aria-label="Entfernen" onclick="P.basket.splice(${i},1);P.basket.length?drawBasket():drawPicker()">×</button></div>`).join('')}</div>
     <div class="card" style="margin-top:12px" id="bsum"></div>
     ${P.mode === 'log' && S.partner ? `<label class="check" style="margin-top:12px"><input type="checkbox" ${P.sendTo ? 'checked' : ''} onchange="P.sendTo=this.checked"> Auch an ${esc(nameOf(S.partner))} schicken</label>` : ''}
@@ -1681,7 +1725,7 @@ function offMap(p){
   let kcal = num(n['energy-kcal_100g']); if (!kcal && n.energy_100g) kcal = num(n.energy_100g) / 4.184;
   if (!kcal) return null;
   return { name: p.product_name_de || p.product_name || 'Unbenanntes Produkt', brand: (p.brands || '').split(',')[0].trim(), barcode: p.code,
-    per: { kcal, p: num(n.proteins_100g), c: num(n.carbohydrates_100g), f: num(n.fat_100g) }, serving: num(p.serving_quantity) || 0, src:'off' };
+    per: { kcal, p: num(n.proteins_100g), c: num(n.carbohydrates_100g), f: num(n.fat_100g) }, serving: num(p.serving_quantity) || 0, portion: num(p.serving_quantity) || 0, src:'off' };
 }
 const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,serving_quantity';
 async function doSearch(){
@@ -1719,16 +1763,16 @@ const saveQuick = run(async () => {
 function drawRecipeAmount(id){
   const r = S.rc[id];
   openSheet(`<div class="sh-head"><h3>${esc(r.data.name)}</h3><button class="btn sm ghost" onclick="drawPicker()">Zurück</button></div>
-    <label class="f"><span>Portion (1 = wie in der Vorlage)</span><input id="rf" inputmode="decimal" value="${String(r.user_id === S.user.id ? (r.data.factor || 1) : 1).replace('.', ',')}" oninput="rPrev('${id}')"></label>
-    <div class="quick">${[0.5,0.75,1,1.25,1.5].map(f => `<button class="btn sm ghost" onclick="$('#rf').value='${String(f).replace('.', ',')}';rPrev('${id}')">×${String(f).replace('.', ',')}</button>`).join('')}</div>
+    <div class="f"><span>Portion (1 = wie in der Vorlage)</span><button class="nf nfbig" id="rf" aria-label="Portion" onclick="rfPad('${id}')">${npFmt(r.user_id === S.user.id ? (r.data.factor || 1) : 1)}</button></div>
     <div class="card" id="aprev"></div>
-    <div class="btns"><button class="btn full" onclick="logRecipe('${id}')">Hinzufügen</button></div>`);
-  rPrev(id);
+    <div class="btns"><button class="btn accent full" onclick="logRecipe('${id}')">Eintragen</button></div>`);
+  rPrev(id); rfPad(id);
 }
-function rPrev(id){ const t = recipeTotals(S.rc[id], num($('#rf').value));
+function rfPad(id){ npOpen({ sel: '#rf', value: $('#rf').textContent, step: 0.5, go: 'Eintragen', label: 'Portion', onInput: v => { $('#rf').textContent = v; rPrev(id); }, onGo: () => logRecipe(id) }); }
+function rPrev(id){ const t = recipeTotals(S.rc[id], num($('#rf').textContent));
   $('#aprev').innerHTML = `<b class="num n36">${fmt(t.kcal)} kcal</b><div class="small muted">Protein ${fmt1(t.p)} g, Kohlenhydrate ${fmt1(t.c)} g, Fett ${fmt1(t.f)} g</div>`; }
 const logRecipe = run(async id => {
-  const r = S.rc[id], f = num($('#rf').value) || 1;
+  const r = S.rc[id], f = num($('#rf').textContent) || 1; npClose();
   await add('log', S.day, { slot: P.slot, name: r.data.name, recipe_id: r.user_id === S.user.id ? id : null, factor: f, ...roundN(recipeTotals(r, f)) });
   if (P.basket.length){ toast('Vorlage gespeichert. Der Korb ist noch offen.'); drawBasket(); return; }
   closeSheet(); toast('Hinzugefügt'); render();
@@ -1786,7 +1830,7 @@ function drawRecipe(){
     <label class="f"><span>Mahlzeit</span><select onchange="R.slot=this.value">${SLOTS.map(([k, l]) => `<option value="${k}" ${R.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     <div class="f"><span>Geplant an</span></div>
     <div class="chips">${WD.map((d, i) => `<label class="chip"><input type="checkbox" ${R.days.includes(i) ? 'checked' : ''} onchange="R.days=this.checked?[...R.days,${i}]:R.days.filter(x=>x!==${i})"><span>${d}</span></label>`).join('')}</div>
-    <label class="f"><span>Meine Portion (1 = Mengen wie unten)</span><input inputmode="decimal" value="${String(R.factor).replace('.', ',')}" oninput="R.factor=num(this.value)||1"></label>
+    <div class="f"><span>Meine Portion (1 = Mengen wie unten)</span><button class="nf nfbig" id="rfac" aria-label="Meine Portion" onclick="npOpen({sel:'#rfac',value:R.factor,step:0.5,go:'Fertig',label:'Portion',onInput:v=>{R.factor=num(v)||1;$('#rfac').textContent=v},onGo:npClose})">${npFmt(R.factor)}</button></div>
     <div class="sec-h"><h3 class="sub" style="margin:0">Zutaten</h3><span class="muted small">${fmt(t.kcal)} kcal, P ${fmt(t.p)} g</span></div>
     <div class="list">${R.items.map((it, i) => `<div class="row"><div class="grow"><div class="t">${esc(it.name)}</div><div class="s">${fmt(it.grams)} g, ${fmt(scale(it.per, it.grams).kcal)} kcal</div></div><button class="iconbtn" aria-label="Zutat entfernen" onclick="R.items.splice(${i},1);drawRecipe()">×</button></div>`).join('')}
     <div class="row"><button class="btn sm ghost" onclick="openPicker({mode:'recipe',title:'Zutat hinzufügen'})">+ Zutat hinzufügen</button></div></div>

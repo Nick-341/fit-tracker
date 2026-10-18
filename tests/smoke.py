@@ -154,7 +154,9 @@ def flow_suche(ctx):
     check('300 g' in pg.inner_text('.fname .s >> nth=0'), 'Suche: zuletzt verwendete Menge')
     pg.click('.qplus >> nth=0'); pg.wait_for_timeout(200)
     check(pg.query_selector('.qplus.in') is not None and pg.inner_text('.bcount') == '1', 'Schnell-Plus legt in den Korb')
-    pg.click('.fname >> nth=1'); pg.wait_for_timeout(300); pg.fill('#ag', '150'); pg.dispatch_event('#ag', 'input'); pg.click('text=In den Korb'); pg.wait_for_timeout(300)
+    pg.click('.fname >> nth=1'); pg.wait_for_timeout(300); shot(pg, 'menge_korb')
+    check(pg.inner_text('#npgo') == 'In den Korb', 'Mengen-Sheet bei vollem Korb: „In den Korb“')
+    [pg.click(f'#numpad >> text="{d}"') for d in '150']; pg.click('#npgo'); pg.wait_for_timeout(300)
     check(pg.inner_text('.bcount') == '2', 'Mengenauswahl legt in den Korb'); shot(pg, 'suche_korb')
     pg.click('.bbar >> text=Eintragen'); pg.wait_for_timeout(500)
     check('gespeichert' in toast(pg), 'Eintragen speichert den Korb')
@@ -164,6 +166,25 @@ def flow_suche(ctx):
     pg.fill('#pq', 'sky'); pg.dispatch_event('#pq', 'input'); pg.wait_for_timeout(200)
     check(pg.inner_text('.fname .t >> nth=0') == 'Skyr', 'Offline: Suche in eigenen und zuletzt verwendeten')
     ctx.set_offline(False); return pg
+
+def flow_menge(ctx):
+    pg = open_app(ctx)
+    pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(500)
+    pg.click('.mplus >> nth=3'); pg.wait_for_timeout(600)
+    pg.click('.fname >> nth=0'); pg.wait_for_timeout(300); shot(pg, 'menge')
+    check(pg.inner_text('#npgo') == 'Eintragen' and pg.query_selector('.slotchips button.on') is not None, 'Mengen-Sheet bei leerem Korb: „Eintragen“, Mahlzeit vorausgewählt')
+    check(pg.inner_text('.slotchips button.on') == 'Snacks', 'Mahlzeit aus der man kam')
+    pg.click('[aria-label="10 mehr"]'); pg.wait_for_timeout(100)
+    kcal = pg.inner_text('#aprev .num >> nth=0')
+    pg.click('#npgo'); pg.wait_for_timeout(600)
+    check('eingetragen' in toast(pg), 'Eintragen speichert sofort'); close(pg); pg.wait_for_timeout(400)
+    check(pg.query_selector('.meal.open') is not None and 'Snacks' in pg.inner_text('.meal.open .mname'), 'Eintrag landet in der gewählten Mahlzeit')
+    pg.click('.mexp .row.tap >> nth=0'); pg.wait_for_timeout(300)
+    pg.click('#eng'); [pg.click(f'#numpad >> text="{d}"') for d in '200']
+    check(pg.inner_text('#npgo') == 'Speichern', 'Eintrag bearbeiten: „Speichern“')
+    pg.click('#npgo'); pg.wait_for_timeout(500)
+    check('geändert' in toast(pg), 'Eintrag bearbeiten ändert direkt')
+    return pg
 
 def flow_essen_teilen(ctx):
     pg = open_app(ctx)
@@ -447,7 +468,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_essen_korb, flow_suche, flow_menge, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_hell_dunkel]
 
 def main():
