@@ -544,7 +544,10 @@ def flow_umbruch(ctx):
       ('woche', "S.day=today();openWeek()"), ('essen', "S.tab='essen';S.openSlot='mittag';render()"), ('suche', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'})"),
       ('koerper', "S.tab='koerper';render()"), ('training', "S.tab='training';render()"), ('anderes', "S.tab='training';render().then(()=>openOther())"),
       ('einheit', "startWorkout('r1')"), ('einheit_detail', "S.tab='training';render().then(()=>openWo(Object.keys(S.wos).at(-1)))"),
-      ('editor', "openRoutine('r1')"), ('profil', "S.tab='profil';render()"), ('level', "openGame()"), ('rechner', "openCalc()")]
+      ('editor', "openRoutine('r1')"), ('profil', "S.tab='profil';render()"), ('level', "openGame()"), ('rechner', "openCalc()"),
+      ('kalender', "S.tab='heute';S.day=today();render().then(()=>openCalendar())"), ('zahlenfeld', "startWorkout('r1').then(()=>setTimeout(()=>npSet(0,0,'kg'),300))"),
+      ('menge', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'}).then(()=>drawAmount(1))"), ('gewicht', "S.tab='koerper';render().then(()=>openWeight())"),
+      ('masse', "openMeasure()"), ('rueckgaengig', "S.tab='essen';render().then(()=>undoBar('Hähnchen-Reis-Bowl mit Gemüse gelöscht',null,null))")]
     pg.evaluate("S.day=addDays(today(),-3);S.tab='heute';render()"); pg.wait_for_timeout(500)
     check('Ganzkörper A' in pg.inner_text('.tile .tname'), 'Kachel zeigt langen Trainingsnamen')
     for w, h in [(390, 844), (375, 667)]:
@@ -552,7 +555,7 @@ def flow_umbruch(ctx):
         for scheme in ['light', 'dark']:
             pg.emulate_media(color_scheme=scheme)
             for name, js in screens:
-                pg.evaluate('closeSheet(); stopRest(); clearDraft()'); pg.evaluate(js); pg.wait_for_timeout(450)
+                pg.evaluate('commitUndo(); closeSheet(); stopRest(); clearDraft()'); pg.evaluate(js); pg.wait_for_timeout(700)
                 for sc in [0, 1e6]:
                     pg.evaluate(f"window.scrollTo(0,{sc}); const c=document.querySelector('.sheet-card'); if(c) c.scrollTop={sc}"); pg.wait_for_timeout(80)
                     bad = pg.evaluate(WRAP_JS)

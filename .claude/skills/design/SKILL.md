@@ -56,6 +56,29 @@ Archivo (variabel). Überschriften: `font-weight:900; font-stretch:112%`. Fließ
 - Feste Leisten am Sheet-Ende: `.wbar` (Training: Pausentimer `#restbar` + Auto-Timer + „Einheit speichern“), `.bbar` (Korb), beide sticky bottom. Inhalte darunter dürfen nie verdeckt werden; Hauptaktionen gehören in die Leiste selbst.
 - Rückmeldung: `toast('…')`
 
+### Zahlenfeld (seit 1.6.1)
+Eigenes Zahlenfeld statt System-Tastatur für alle Zahleneingaben außer Suche, Texten und Kalorienrechner. Ersetzt die untere Leiste, solange es offen ist (`body.npopen`).
+- Aufbau: Kopf `.lbl` („GEWICHT · SATZ 3“) + rechts „Vorher 40 × 8“ · zwei 52-px-Tasten −Schritt/+Schritt auf `--pad` (Tasten `--soft`) · Ziffernblock 3 × 4 (1–9, Komma, 0, Schließen-Pfeil, Ziffern 24 px) · rechte Spalte Löschen + hoher Hauptbutton in `--accent`.
+- Felder sind **Buttons** im Feld-Look (`.nf`, `.amtval`), keine `<input>`, damit iOS keine Tastatur öffnet. Aktives Feld: 2-px-Rand `--accent` (`.npact`). Erster Ziffern-Tipp ersetzt den Wert, ± ändert ihn.
+- Aufruf: `npOpen({ sel, value, step, label, prev, decimal, go, onInput(v), onGo() })`, schließen mit `npClose()`. Bei Tasten nur den Wert aktualisieren, nie neu zeichnen (sonst gehen Taps verloren).
+- Schritte: Training kg 2,5 · Wdh. 1 · Essen g/ml 10 · Portion 0,5 · Gewicht 0,1 · Maße 0,5.
+- Hauptbutton je Kontext: „Weiter“ (kg → Wdh., Maß → nächstes Maß) · „Abhaken“ (Wdh., hakt ab und startet Auto-Timer) · „Eintragen“ (Korb leer / Gewicht / letztes Maß) · „In den Korb“ (Korb nicht leer) · „Speichern“ (bestehenden Eintrag ändern).
+
+### Rückgängig-Leiste (seit 1.6.1)
+Löschen ohne Dialog. `softDel(id, label)` blendet den Datenbank-Eintrag sofort aus (über `PEND` in allen `q`-Abfragen), zeigt `undoBar('Apfel gelöscht', onUndo, onCommit)` und ruft `del()` erst nach 5 s oder beim Verlassen der Ansicht / App auf. Bei „Rückgängig“ wird nichts gesendet (auch offline). Für Speicher-Objekte (Sätze, Übungen) `undoBar(text, onUndo, null, 'sheet')`.
+- Optik: `--board`, Text `--board-ink`, Button „Rückgängig“ Text #FFB81C auf `--board-soft`, unten 3-px-Linie `--accent`, die abläuft. Sitzt über der untersten Leiste (Tab-Leiste, Suchleiste, `.wbar`).
+- Gilt für Einträge, Sätze, Übungen, Einheiten, Gewicht und Maße. Trainingstage, Vorlagen, Abmelden und Verknüpfung lösen behalten die Nachfrage.
+
+### Haken-Zustände (Satz abhaken)
+`.chk` 44 px: offen = Rand `--line` · aktueller Satz = Zeile `.setrow.cur` auf `--soft`, Haken mit Rand `--ink` · erledigt = `--accent` gefüllt, Haken `--on-accent` · Aufwärmsatz erledigt = Haken auf `--soft` (nicht gelb). Vorausgefüllte Werte (`.nf.sug`) in `--muted` auf `--soft`. Erledigte Übung klappt zu `.exdone` (60 px, gelber Haken, „4 Sätze · 3.120 kg“, Chevron).
+
+### Trend-Diagramm (Körper)
+- Achse rechts in ganzen kg (11 px, 700, `--board-muted`), Hilfslinien `--board-soft`. Ausschnitt mindestens 2 kg, auf ganze kg gerundet, Daten mittig; bei mehr als 6 kg Beschriftung in größeren Schritten.
+- Waage: Punkte r 2,4 in #4A525C. Trend (Ø 7 Tage): Linie 3 px `--accent`, Lücken über 14 Tage unterbrechen die Linie. Startwert: kleiner Ring + Zahl. Endwert: gelbes Schild (`--accent`, Text `--on-accent`, 12 px, 900).
+- Datumsmarken unten: Anfang, Mitte, „heute“. Legende „— Trend“ und „• Waage“ (12 px). `role="img"` mit `aria-label` („Gewichtstrend 4 Wochen: von 76,6 auf 75,3 kg“).
+- Unter 7 Wiegungen keine Trendlinie, Hinweis „Trend ab 7 Wiegungen“.
+- Trend-Zeile unter der großen Zahl: Pill auf `--board-soft` mit Pfeil in `--accent` („1,3 kg in 4 Wochen“, unter 0,2 kg „stabil“) und daneben `--board-muted` „ca. −0,3 kg pro Woche“.
+
 ## Regeln
 - **Große Zahl = Restwert oder Trend, nie Rohwert** (kcal übrig statt gegessen, Ø 7 Tage statt Tageswiegung).
 - **Gelb nur für Fortschritt, Erledigtes und die eine Hauptaktion.** Keine gelben Deko-Flächen.
